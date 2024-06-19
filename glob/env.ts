@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import hera from '../utils/hera';
+import { config as configureDotenv } from 'dotenv';
 import { ajvs } from 'ajvs-ts';
+import path from 'path'
 
 const ajv = ajvs();
 
@@ -26,6 +28,7 @@ const envCustomParser = {
 }
 
 function loadConfig(): ENV_CONFIG {
+    configureDotenv({ path: path.resolve(process.cwd(), 'process.env') })
     console.debug('process.env')
     console.debug(JSON.stringify(process.env, null, 2))
     const config: Partial<ENV_CONFIG> = _.cloneDeep(ENV_DEFAULT);
@@ -38,7 +41,8 @@ function loadConfig(): ENV_CONFIG {
     }
 
     if (!ajvEnvConfig(config)) throw new Error(`Invalid env config; ${JSON.stringify(ajvEnvConfig.errors, null, 2)}`)
-    return config as ENV_CONFIG;
+    return config as ENV_CONFIG
+;
 }
 
 export const ENV: ENV_CONFIG = loadConfig();
