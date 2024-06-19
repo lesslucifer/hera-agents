@@ -1,7 +1,7 @@
 {
-  "name": "app-name",
+  "name": "hera-agents",
   "version": "1.0.0",
-  "description": "App description",
+  "description": "Hera LLM Agents using Gemini AI",
   "main": "dist/app.js",
   "scripts": {
     "int-test": "cross-env mocha -r node_modules/ts-node/register \"test/integration/**/*.ts\" --reporter list --exit",
