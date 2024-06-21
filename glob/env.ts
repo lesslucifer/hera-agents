@@ -10,12 +10,16 @@ export interface ENV_CONFIG {
     NAME: string;
     HTTP_PORT: number;
     LOG_LEVEL: string;
+    JIRA_KEY: string
+    GEMINI_KEY: string
 }
 
 const ajvEnvConfig = ajv.compile({
     '+@NAME': 'string',
     '@HTTP_PORT': 'number',
-    '@LOG_LEVEL': 'string'
+    '@LOG_LEVEL': 'string',
+    '@JIRA_KEY': 'string',
+    '@GEMINI_KEY': 'string'
 })
 
 const ENV_DEFAULT: Partial<ENV_CONFIG> = {

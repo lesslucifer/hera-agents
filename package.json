@@ -22,9 +22,12 @@
   },
   "author": "VuLQ",
   "dependencies": {
+    "@google/generative-ai": "^0.13.0",
+    "@qdrant/qdrant-js": "^1.9.0",
     "@sentry/node": "^5.21.3",
     "@types/lodash": "^4.17.5",
-    "ajvs-ts": "^0.0.2",
+    "ajvs-ts": "^0.0.3",
+    "axios": "^1.7.2",
     "body-parser": "^1.19.0",
     "dotenv": "^16.4.5",
     "express": "^4.17.1",
