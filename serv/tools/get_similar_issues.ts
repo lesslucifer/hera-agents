@@ -1,12 +1,9 @@
-import axios from "axios";
-import { ITool } from ".";
-import ENV from "../../glob/env";
-import hera from "../../utils/hera";
-import _ from "lodash";
 import { Content, GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
 import { QdrantClient } from "@qdrant/qdrant-js";
+import { ITool } from ".";
+import ENV from "../../glob/env";
 
-export class GetSimilarIssues implements ITool {
+export class GetTicketByDescription implements ITool {
     qdrant = new QdrantClient({ host: '127.0.0.1', port: 6333 });
     _embeddingModel: GenerativeModel
 
@@ -18,19 +15,19 @@ export class GetSimilarIssues implements ITool {
         )
     }
 
-    readonly name: string = GetSimilarIssues.name;
+    readonly name: string = GetTicketByDescription.name;
     readonly description = {
-        "name": GetSimilarIssues.name,
-        "description": "Getting the key of similar JIRA issues from a text content within a project",
+        "name": GetTicketByDescription.name,
+        "description": "Getting the key of issues / ticket having similar description to the provided content within a project",
         "parameters": {
-            "type": "object",
+            "type": "OBJECT",
             "properties": {
                 "content": {
-                    "type": "string",
-                    "description": "The content of the query"
+                    "type": "STRING",
+                    "description": "The content of query, it should have semantic information, should not contains key or id"
                 },
                 "project": {
-                    "type": "string",
+                    "type": "STRING",
                     "description": "The key of the project"
                 }
             },
@@ -38,7 +35,7 @@ export class GetSimilarIssues implements ITool {
         }
     }
 
-    async apply(content: string, project: string): Promise<Content> {
+    async apply({ content, project }: { content: string, project: string }): Promise<Content> {
         const { embedding } = await this.embeddingModel.embedContent(content)
 
         const results = await this.qdrant.search(project, {
