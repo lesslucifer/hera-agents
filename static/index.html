@@ -33,7 +33,7 @@
         root.render(React.createElement(Conversation));
     })()
 
-    const { useState, useEffect } = React
+    const { useState, useEffect, useMemo } = React
 
     // const HOST = 'https://jrggs.vulq.io.vn'
     const HOST = 'http://localhost:3000'
@@ -47,10 +47,29 @@
         end: moment().format('YYYY-MM-DD'),
     }
 
+
+    function Content({ content }) {
+        return (<div class="content-container">
+            <div class="role-container">
+                <label>Role: {content.role}</label>
+            </div>
+            <div class="parts-container">
+                {content.parts.map(part => {
+                    if (part.text) return (<div class="part" dangerouslySetInnerHTML={{ __html: marked.parse(part.text || '') }}></div>)
+                    return <div>{JSON.stringify(part, null, 2)}</div>
+                })}
+            </div>
+        </div>)
+    }
+
     function Conversation() {
         const [question, setQuestion] = useState('')
         const [status, setStatus] = useState('QUESTIONING')
-        const [response, setResponse] = useState('')
+        const [response, setResponse] = useState(null)
+        const [debugData, setDebugData] = useState(null)
+
+        const conversationId = useMemo(() => _.get(response, 'id', 'null'), [response])
+        const answer = useMemo(() => marked.parse(_.get(response, 'parts.0.text', 'Cannot get the answer') || ''), [response])
 
         const onSend = async () => {
             try {
@@ -58,16 +77,25 @@
                 const resp = await axios.post(`${HOST}/agent`, {
                     q: question
                 })
-                const text = _.get(resp, 'data.data.parts.0.text', "Cannot get the answer")
-                setResponse(marked.parse(text))
+                setResponse(resp.data.data)
             }
             catch (err) {
-                console.log(err.response)
-                const msg = [err.name, err.message, _.get(err, 'response.data.err.message'), err.stack].filter(s => !!s).join('\n\n')
-                setResponse(marked.parse(msg))
+                const msg = [err.name, err.message, _.get(err, 'response.data.err.messages'), err.stack].filter(s => !!s).join('\n\n')
+                setResponse({ id: '', parts: [{ text: msg }] })
             }
             finally {
                 setStatus('QUESTIONING')
+            }
+        }
+
+        const debug = async () => {
+            try {
+                const resp = await axios.get(`${HOST}/agent/conversation/${conversationId}`)
+                setDebugData(resp.data.data)
+            }
+            catch (err) {
+                const msg = [err.name, err.message, _.get(err, 'response.data.err.messages'), err.stack].filter(s => !!s).join('\n\n')
+                setDebugData({ question: 'Cannot get debug data', history: [], answer: '' })
             }
         }
 
@@ -88,8 +116,20 @@
                     <div class="asking-text">Generating answer...</div>
                 </div>}
                 {status === 'QUESTIONING' && !!response && <div>
-                    <label>Answer:</label>
-                    <div class="answer-box" rows="3" dangerouslySetInnerHTML={{ __html: response }} />
+                    <label>Answer ({conversationId}):</label>
+                    <div class="answer-box" dangerouslySetInnerHTML={{ __html: answer }} />
+                </div>}
+            </div>
+            <div class="debug-container">
+                <div class="debug-btn-container">
+                    <button disabled={status !== 'QUESTIONING'} onClick={() => debug()} class="debug-btn">Debug</button>
+                </div>
+                {debugData && <div class="debug-data-container">
+                    {!!debugData.question && <div class="part">Question: {debugData.question}</div>}
+                    {!!debugData.history && debugData.history.map(content => <Content content={content} />)}
+                    {!!debugData.answer && <div>
+                        <Content content={debugData.answer} />
+                    </div>}
                 </div>}
             </div>
         </div>)
@@ -136,6 +176,33 @@
 
     .asking-text {
         margin-left: 4px;
+    }
+
+    .debug-container {
+        margin-top: 12px;
+        border: 1px solid black;
+        border-radius: 8px;
+        padding: 12px;
+    }
+
+    .debug-btn-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .content-container {
+        margin-top: 8px;
+        border: 1px solid black;
+        border-radius: 8px;
+        padding: 8px;
+    }
+
+    .part {
+        margin-top: 4px;
+        border: 1px solid black;
+        border-radius: 4px;
+        padding: 4px;
     }
 
     .loader {

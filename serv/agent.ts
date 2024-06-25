@@ -46,12 +46,15 @@ class AIAgentService {
             })
         }
         const finalAnswer = await this.finalAnswerAgent(history)
-        await Conversation.insertOne({
+        const res = await Conversation.insertOne({
             question,
             history,
             answer: finalAnswer
         })
-        return finalAnswer
+        return {
+            id: res.insertedId,
+            ...finalAnswer
+        }
     }
 
     async planningAgent(query: string, history: Content[]) {
