@@ -5,6 +5,7 @@ import ENV from "../glob/env";
 import { GetTicketByDescription } from "./tools/get_similar_issues";
 import * as YAML from 'json-to-pretty-yaml';
 import _ from "lodash";
+import { Conversation } from "../models";
 
 class AIAgentService {
     _gemini: GenerativeModel
@@ -44,7 +45,13 @@ class AIAgentService {
                 role: 'model'
             })
         }
-        return await this.finalAnswerAgent(history)
+        const finalAnswer = await this.finalAnswerAgent(history)
+        await Conversation.insertOne({
+            question,
+            history,
+            answer: finalAnswer
+        })
+        return finalAnswer
     }
 
     async planningAgent(query: string, history: Content[]) {
@@ -57,7 +64,8 @@ class AIAgentService {
 
             Your plan must meet the following requirements:
             1. It should lead to the final answer / action that accomplish to the user query
-            2. It must based on the facts / information provided by the user, and other agents. Don't make facts yourself`
+            2. It must based on the facts / information provided by the user, and other agents. Don't make facts yourself
+            3. It must be a meaningful plan, MUST NOT include code or script`
 
         return await this.callGeminiAgent(systemPrompt, {
             parts: [
@@ -149,7 +157,7 @@ class AIAgentService {
 
         const content = await this.callGeminiAgent(systemPrompt, {
             parts: [
-                { text: 'This is final answer is the last model output. Please proceed it' }
+                { text: 'The final answer is the last model output. Please proceed it' }
             ],
             role: 'user'
         }, history, false)

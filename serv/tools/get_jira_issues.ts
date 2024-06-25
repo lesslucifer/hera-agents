@@ -22,7 +22,7 @@ const IssueExtractFields: _.Dictionary<JiraIssueExtractField> = _.keyBy([
     { name: "Description", f: iss => _.get(iss, 'fields.description')?.slice(0, 1500) || '' },
     { name: "Story Points", f: iss => _.get(iss, 'fields.customfield_10033') ?? 0 },
     { name: "Developers", f: getIssueDevelopers, expand: ['changelog'], defaultContent: 'None' },
-    { name: "Comments", f: iss => _.get(iss, 'fields.comment.comments', []).join('\n'), defaultContent: 'None' },
+    { name: "Comments", f: getComments, defaultContent: 'None' },
     // { name: "Assignee", field: 'fields.assignee.displayName' },
     { name: "project", field: 'fields.project.key' }
 ], f => f.name)
@@ -42,6 +42,11 @@ function getIssueDevelopers(iss: any) {
     }
 
     return Object.entries(developers).map(([id, name]) => `${name}(id=${id})`).join(', ')
+}
+
+function getComments(iss: any) {
+    const comments: any[] = _.get(iss, 'fields.comment.comments', [])
+    return comments.map(cm => `[${cm?.created}]${cm?.author?.displayName}(id=${cm?.author?.accountId}): ${cm?.body}`).join('\n')
 }
 
 export class GetJiraIssuesTool implements ITool {
