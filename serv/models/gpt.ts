@@ -111,7 +111,8 @@ export class GPTModel implements IAIModel {
     private extractUsageData(response: ChatCompletion): IAIModelOutputPrompt['usage'] {
         return response.usage ? {
             inputToken: response.usage.prompt_tokens,
-            outputToken: response.usage.completion_tokens
+            outputToken: response.usage.completion_tokens,
+            totalToken: (response.usage.prompt_tokens || 0) + (response.usage.completion_tokens || 0)
         } : undefined;
     }
 

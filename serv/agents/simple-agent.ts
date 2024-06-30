@@ -1,6 +1,6 @@
 import { IAIModelDynamicPrompt, IAIModelPrompt, IAIToolDeclaration } from "../models/base";
 import { IAITool } from "../tools";
-import { IAIAgent, IAIAgentContext } from "./base";
+import { IAIAgent, AIAgentContext } from "./base";
 
 export class SimpleAIAgent implements IAIAgent {
     protected _systemPrompt = ''
@@ -13,20 +13,20 @@ export class SimpleAIAgent implements IAIAgent {
         return []
     }
 
-    async systemPrompt(ctx: IAIAgentContext): Promise<string> {
+    async systemPrompt(ctx: AIAgentContext): Promise<string> {
         return this._systemPrompt
     }
 
-    async userPrompt(ctx: IAIAgentContext): Promise<IAIModelDynamicPrompt[]> {
+    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         return []
     }
 
-    async run(ctx: IAIAgentContext) {
+    async run(ctx: AIAgentContext) {
         const prompts = await this.userPrompt(ctx)
         return this.runWithPrompts(ctx, prompts)
     }
 
-    async runWithPrompts(ctx: IAIAgentContext, prompts: IAIModelDynamicPrompt[]) {
+    async runWithPrompts(ctx: AIAgentContext, prompts: IAIModelDynamicPrompt[]) {
         return await ctx.model.generate({
             prompts,
             sysInstruction: await this.systemPrompt(ctx),

@@ -1,11 +1,11 @@
 import _ from "lodash";
 import { IAIModel, IAIModelDynamicPrompt } from "../models/base";
 import { IAITool } from "../tools";
-import { IAIAgentContext, IAIAgentRecord } from "./base";
+import { AIAgentContext, IAIAgentRecord } from "./base";
 import { SummaryAIAgent } from "./summary-agent";
 
 export class AIAgentHelper {
-    static async getRecordSummary(ctx: IAIAgentContext, record: IAIAgentRecord) {
+    static async getRecordSummary(ctx: AIAgentContext, record: IAIAgentRecord) {
         if (!record.summary) {
             try {
                 const summary = await SummaryAIAgent.INST.run(ctx)
@@ -25,7 +25,7 @@ export class AIAgentHelper {
         return [history.slice(0, history.length - 1), history[history.length - 1]]
     }
 
-    static async buildSummaryPrompts(ctx: IAIAgentContext, history: IAIAgentRecord[], ...exceptionTags: string[]) {
+    static async buildSummaryPrompts(ctx: AIAgentContext, history: IAIAgentRecord[], ...exceptionTags: string[]) {
         await this.constructSummaries(ctx, history.filter(r => !r.tags.some(tag => exceptionTags.includes(tag))))
         return history.map(record => {
             if (record.tags.some(tag => exceptionTags.includes(tag))) return record.prompt
@@ -43,7 +43,7 @@ export class AIAgentHelper {
         })
     }
 
-    static async constructSummaries(ctx: IAIAgentContext, records: IAIAgentRecord[]) {
+    static async constructSummaries(ctx: AIAgentContext, records: IAIAgentRecord[]) {
         if (!records.length) return
         const chunks = _.chunk(records, 5)
         for (const chunk of chunks) {

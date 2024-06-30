@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { IAIModelDynamicPrompt } from "../models/base";
-import { IAIAgentContext } from "./base";
+import { AIAgentContext } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 import { AIAgentHelper } from "./helper";
 
@@ -25,7 +25,7 @@ export class ManagerAIAgent extends SimpleAIAgent {
         }`
     }
 
-    async userPrompt(ctx: IAIAgentContext): Promise<IAIModelDynamicPrompt[]> {
+    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         const [prevRecords, lastRecord] = AIAgentHelper.splitLastRecord(ctx.history)
 
         if (lastRecord.type === 'user') {

@@ -101,7 +101,8 @@ export class ClaudeModel implements IAIModel {
             parts,
             usage: message.usage ? {
                 inputToken: message.usage.input_tokens,
-                outputToken: message.usage.output_tokens
+                outputToken: message.usage.output_tokens,
+                totalToken: (message.usage.input_tokens || 0) + (message.usage.output_tokens || 0)
             } : undefined
         };
     }

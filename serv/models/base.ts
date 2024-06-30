@@ -78,11 +78,14 @@ export interface IAIModelGenerationRequest {
     customConfig?: IAIModelGenerationRequestCustomConfig
 }
 
+export interface IAIModelUsage {
+    inputToken: number
+    outputToken: number
+    totalToken: number
+}
+
 export interface IAIModelOutputPrompt extends IAIModelPrompt {
-    usage?: {
-        inputToken: number
-        outputToken: number
-    }
+    usage?: IAIModelUsage
 }
 
 export interface IAIModel {

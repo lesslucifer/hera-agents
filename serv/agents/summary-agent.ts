@@ -1,6 +1,6 @@
 import _, { last } from "lodash";
 import { IAIModelDynamicPrompt } from "../models/base";
-import { IAIAgentContext } from "./base";
+import { AIAgentContext } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 
 export class SummaryAIAgent extends SimpleAIAgent {
@@ -25,7 +25,7 @@ export class SummaryAIAgent extends SimpleAIAgent {
         You must output up to 100 words only`
     }
     
-    async userPrompt(ctx: IAIAgentContext): Promise<IAIModelDynamicPrompt[]> {
+    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         const lastRecord = _.last(ctx.history)
         if (!lastRecord) return []
         return [{

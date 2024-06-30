@@ -75,7 +75,8 @@ export class GeminiModel implements IAIModel {
             parts: candidate.content.parts.map(this.convertGeminiPartToAIModelPart),
             usage: response.usageMetadata ? {
                 inputToken: response.usageMetadata.promptTokenCount,
-                outputToken: response.usageMetadata.candidatesTokenCount
+                outputToken: response.usageMetadata.candidatesTokenCount,
+                totalToken: (response.usageMetadata.promptTokenCount || 0) + (response.usageMetadata.promptTokenCount || 0)
             } : undefined
         };
     }
