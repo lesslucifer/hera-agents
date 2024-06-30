@@ -1,0 +1,90 @@
+import _ from "lodash"
+
+export type IAIModelPromptRole = 'user' | 'model' | 'function'
+
+export interface IAIModelPromptPart {
+    id?: number | string
+    role?: IAIModelPromptRole
+    text?: string
+    mimeType?: string
+    base64?: string
+    fileUri?: string
+    functionName?: string
+    functionArgs?: object
+    functionResponse?: object
+}
+
+export interface IAIModelPrompt {
+    role: IAIModelPromptRole
+    parts: IAIModelPromptPart[]
+}
+
+export type IAIModelDynamicPrompt = IAIModelPrompt | IAIModelPromptPart | string
+
+export function mkPrompt(prompt: IAIModelDynamicPrompt): IAIModelPrompt {
+    if (_.isString(prompt)) {
+        return {
+            role: 'user',
+            parts: [{ text: prompt }]
+        };
+    }
+
+    if (_.isPlainObject(prompt)) {
+        if (isIAIModelPrompt(prompt)) {
+            return {
+                role: prompt.role ?? 'user',
+                parts: prompt.parts
+            };
+        } else {
+            const part = prompt as IAIModelPromptPart;
+            return {
+                role: part.role ?? 'user',
+                parts: [part]
+            };
+        }
+    }
+
+    throw new Error('Invalid prompt type. Expected string, IAIModelPromptPart, or IAIModelPrompt.');
+}
+
+// Type guard functions
+export function isIAIModelPrompt(prompt: IAIModelDynamicPrompt): prompt is IAIModelPrompt {
+    return _.isPlainObject(prompt) && 'parts' in (prompt as object) && _.isArray((prompt as IAIModelPrompt).parts);
+}
+
+export function isIAIModelPromptPart(prompt: IAIModelDynamicPrompt): prompt is IAIModelPromptPart {
+    return _.isPlainObject(prompt) && !('parts' in (prompt as object));
+}
+
+export interface IAIToolDeclaration {
+    name: string
+    description?: string
+    parameters?: object
+}
+
+export interface IAIModelGenerationRequestCustomConfig {
+    temperature?: number
+    topK?: number
+    topP?: number
+    maxOutputTokens?: number
+    stopSequences?: string[]
+    safetySettings?: any
+}
+
+export interface IAIModelGenerationRequest {
+    prompts: IAIModelDynamicPrompt[]
+    sysInstruction?: string
+    tools?: IAIToolDeclaration[]
+    customConfig?: IAIModelGenerationRequestCustomConfig
+}
+
+export interface IAIModelOutputPrompt extends IAIModelPrompt {
+    usage?: {
+        inputToken: number
+        outputToken: number
+    }
+}
+
+export interface IAIModel {
+    generate(req: IAIModelGenerationRequest): Promise<IAIModelOutputPrompt>
+}
