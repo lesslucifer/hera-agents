@@ -1,5 +1,5 @@
 import { Content, GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
-import { ITool } from "./tools";
+import { IAITool } from "./tools";
 import { GetJiraIssuesTool } from "./tools/get_jira_issues";
 import ENV from "../glob/env";
 import { GetTicketByDescription } from "./tools/get_similar_issues";
@@ -22,7 +22,7 @@ class AIAgentService {
         )
     }
 
-    tools: ITool[] = [
+    tools: IAITool[] = [
         new GetTicketByDescription(),
         new GetJiraIssuesTool(),
     ]

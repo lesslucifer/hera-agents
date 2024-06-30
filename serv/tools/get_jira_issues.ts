@@ -1,8 +1,8 @@
-import { Content } from "@google/generative-ai";
 import axios from "axios";
-import { ITool } from ".";
-import ENV from "../../glob/env";
 import _ from "lodash";
+import { IAITool } from ".";
+import ENV from "../../glob/env";
+import { IAIModelPrompt } from "../models/base";
 
 interface JiraIssueExtractField {
     name: string
@@ -49,37 +49,34 @@ function getComments(iss: any) {
     return comments.map(cm => `[${cm?.created}]${cm?.author?.displayName}(id=${cm?.author?.accountId}): ${cm?.body}`).join('\n')
 }
 
-export class GetJiraIssuesTool implements ITool {
+export class GetJiraIssuesTool implements IAITool {
     readonly name: string = "GetTicketContent"
-    readonly description = {
-        "name": this.name,
-        "description": "Get batch content of a ticket by keys (MAX: 100)",
-        "parameters": {
-            "type": "OBJECT",
-            "properties": {
-                "keys": {
-                    "type": "ARRAY",
-                    "description": "list of the ticket keys",
-                    "items": {
-                        "type": "STRING",
-                        "description": "key of the ticket"
-                    }
-                },
-                "fields": {
-                    "type": "ARRAY",
-                    "description": "list of field to extract, optional",
-                    "items": {
-                        "type": "STRING",
-                        "format": "enum",
-                        "enum": Object.keys(IssueExtractFields)
-                    }
+    readonly description = "Get batch content of a ticket by keys (MAX: 100)"
+    readonly parameters = {
+        "type": "OBJECT",
+        "properties": {
+            "keys": {
+                "type": "ARRAY",
+                "description": "list of the ticket keys",
+                "items": {
+                    "type": "STRING",
+                    "description": "key of the ticket"
                 }
             },
-            "required": ["keys"]
-        }
+            "fields": {
+                "type": "ARRAY",
+                "description": "list of field to extract, optional",
+                "items": {
+                    "type": "STRING",
+                    "format": "enum",
+                    "enum": Object.keys(IssueExtractFields)
+                }
+            }
+        },
+        "required": ["keys"]
     }
 
-    async apply({ keys, fields }: { keys: string[], fields: string[] }): Promise<Content> {
+    async apply({ keys, fields }: { keys: string[], fields: string[] }): Promise<IAIModelPrompt> {
         const extractFields = this.getFields(fields)
         const expand = extractFields.flatMap(f => f.expand ?? []).join(',')
         let issues = []
@@ -100,7 +97,7 @@ export class GetJiraIssuesTool implements ITool {
             issues = resp.data.issues
         }
         catch (err) {
-            
+
         }
 
         return {
@@ -131,7 +128,7 @@ export class GetJiraIssuesTool implements ITool {
 
         return fields.filter(f => !!IssueExtractFields[f]).map(f => IssueExtractFields[f])
     }
-    
+
     private extractIssueContent(issue: any, fields: JiraIssueExtractField[]) {
         return fields.map(f => {
             const content = (f.f ? f.f(issue) : f.field ? _.get(issue, f.field) : '') || (f.defaultContent ?? '')

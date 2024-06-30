@@ -1,7 +1,5 @@
-import { Content } from "@google/generative-ai"
+import { IAIModelPrompt, IAIToolDeclaration } from "../models/base"
 
-export interface ITool<Arg extends object = object> {
-    readonly name: string
-    readonly description: any
-    apply(arg: Arg): Promise<Content>
+export interface IAITool<Arg extends object = object> extends IAIToolDeclaration {
+    apply(arg: Arg): Promise<IAIModelPrompt>
 }
