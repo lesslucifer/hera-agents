@@ -3,6 +3,8 @@ import { IAITool } from "../tools";
 import { IAIAgent, IAIAgentContext } from "./base";
 
 export class SimpleAIAgent implements IAIAgent {
+    protected _systemPrompt = ''
+
     constructor(public name: string, public description: string, public shortDescription?: string) {
         this.shortDescription ??= this.description
     }
@@ -12,7 +14,7 @@ export class SimpleAIAgent implements IAIAgent {
     }
 
     async systemPrompt(ctx: IAIAgentContext): Promise<string> {
-        return ''
+        return this._systemPrompt
     }
 
     async userPrompt(ctx: IAIAgentContext): Promise<IAIModelDynamicPrompt[]> {
