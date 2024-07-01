@@ -12,9 +12,9 @@ export class ManagerAIAgent extends SimpleAIAgent {
             "The Manager AI Agent routes user messages to the most suitable specialized AI, ensuring efficient and accurate responses based on user intent and conversation history"
             , "Routes user messages to the best-suited specialized AI agent")
 
-        this._systemPrompt = `You are the Manager AI Agent. Your job is to route user messages to the best-suited specialized AI agent. Follow these steps:
+        this.systemPrompt = `You are the Manager AI Agent. Your job is to route user messages to the best-suited specialized AI agent. Follow these steps:
 
-        1. Understand the user’s message and intent.
+        1. Understand the user's message and intent.
         2. Review the conversation history for context.
         3. Select the best-suited AI agent.
 
@@ -26,19 +26,15 @@ export class ManagerAIAgent extends SimpleAIAgent {
     }
 
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
-        const [prevRecords, lastRecord] = AIAgentHelper.splitLastRecord(ctx.history)
+        const lastRecord = AIAgentHelper.lastOutput(ctx.history)
 
-        if (lastRecord.type === 'user') {
-            return [
-                ...await AIAgentHelper.buildSummaryPrompts(ctx, prevRecords, 'feedback'),
-                lastRecord.prompt
-            ]
+        if (lastRecord.role === 'user') {
+            return ctx.conversationPrompts
         }
-        else {
-            return [
-                ...await AIAgentHelper.buildSummaryPrompts(ctx, ctx.history, 'feedback'),
-                'Please help me to continue the process according to the provided conversation and feedback'
-            ]
-        }
+
+        return [
+            ...ctx.conversationPrompts,
+            'Proceed to continue according to the given conversation'
+        ]
     }
 }

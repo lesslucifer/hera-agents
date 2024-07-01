@@ -1,7 +1,8 @@
 import _, { last } from "lodash";
-import { IAIModelDynamicPrompt } from "../models/base";
+import { IAIModelDynamicPrompt, IAIModelPrompt } from "../models/base";
 import { AIAgentContext } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
+import { AIAgentHelper } from "./helper";
 
 export class SummaryAIAgent extends SimpleAIAgent {
     static readonly INST = new SummaryAIAgent()
@@ -11,7 +12,7 @@ export class SummaryAIAgent extends SimpleAIAgent {
             "An AI agent that summarizes outputs from other agents, function calls, and user data, providing concise, structured insights to support decision-making processes in multi-agent systems"
             , "Support agent summarizing diverse inputs for AI system optimization")
 
-        this._systemPrompt = `You are an AI agent specialized in summarizing data to support other AI agents. Your primary function is to analyze and condense outputs from various sources, including other agents, function calls, function responses, and user-provided data. When presented with information to summarize, follow these steps:
+        this.systemPrompt = `You are an AI agent specialized in summarizing data to support other AI agents. Your primary function is to analyze and condense outputs from various sources, including other agents, function calls, function responses, and user-provided data. When presented with information to summarize, follow these steps:
         Identify the source and type of the input (e.g., agent output, function call, user data).
         Determine the key elements and most relevant information within the input.
         Analyze for patterns, inconsistencies, or notable points across multiple inputs if applicable.
@@ -21,19 +22,20 @@ export class SummaryAIAgent extends SimpleAIAgent {
         c) Relevant details or data points
         d) Potential implications for the requesting agent or system
 
-        Your summaries should be concise, clear, and tailored to assist other AI agents or systems in their decision-making processes. Adapt your output format to best serve the needs of the requesting agent or function.
-        You must output up to 100 words only`
+        Your summaries should be concise, clear, and tailored to assist other AI agents or systems in their decision-making processes. Adapt your output format to best serve the needs of the requesting agent or function.`
     }
-    
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
-        const lastRecord = _.last(ctx.history)
-        if (!lastRecord) return []
-        return [{
-            role: 'user',
-            parts: [
-                { text: `Data to summarize:` },
-                ...lastRecord.prompt.parts
-            ]
-        }]
+        if (!ctx.history.length) return []
+
+        return [
+            ...ctx.conversationPrompts,
+            {
+                role: 'user',
+                parts: [
+                    { text: `Summarize the given conversation` },
+                ]
+            }
+        ]
     }
 }
