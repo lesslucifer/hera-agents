@@ -29,6 +29,10 @@ export class PlannerAgent extends SimpleAIAgent {
         return this._tools
     }
 
+    get outputTags(): string[] {
+        return ["plan"]
+    }
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         const toolDescriptions = this.tools.map(tool => 
             `Tool Name: ${tool.name}; Description: ${tool.description}`

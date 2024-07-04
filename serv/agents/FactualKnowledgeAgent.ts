@@ -21,6 +21,10 @@ export class FactualKnowledgeAgent extends SimpleAIAgent {
         Your primary goal is to deliver accurate, factual information without any embellishment or hallucination.`;
     }
 
+    get outputTags(): string[] {
+        return ['answer']
+    }
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         return [
             ...ctx.conversationPrompts,

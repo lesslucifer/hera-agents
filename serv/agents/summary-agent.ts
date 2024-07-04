@@ -25,6 +25,10 @@ export class SummaryAIAgent extends SimpleAIAgent {
         Your summaries should be concise, clear, and tailored to assist other AI agents or systems in their decision-making processes. Adapt your output format to best serve the needs of the requesting agent or function.`
     }
 
+    get outputTags(): string[] {
+        return ["summary"]
+    }
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         if (!ctx.history.length) return []
 

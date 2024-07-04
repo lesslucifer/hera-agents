@@ -21,6 +21,10 @@ export class ManagerAIAgent extends SimpleAIAgent {
         }`
     }
 
+    get outputTags(): string[] {
+        return ["agent_select", "feedback"]
+    }
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         if (!this.agents.length) throw new Error(`Manager agent cannot proceed. No agent configured`)
         return [

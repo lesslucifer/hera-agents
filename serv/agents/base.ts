@@ -13,6 +13,7 @@ export interface IAIAgentModelRequestHistoryEntry {
 
 export interface IAIAgentRecord {
     id: number
+    tags: string[]
     agentName?: string
     summary?: string
     embeeding?: number[]
@@ -33,6 +34,7 @@ export class AIAgentContext {
     addUserPrompt(prompt: IAIModelDynamicPrompt) {
         const record: IAIAgentRecord = {
             id: this.history.length,
+            tags: ["user"],
             inputPrompts: [],
             outputPrompt: { ...mkPrompt(prompt), role: 'user' },
             usage: emptyAIModelUsage()
@@ -41,9 +43,10 @@ export class AIAgentContext {
         return record
     }
 
-    addAgentRecord(agentName: string, inputPrompts: IAIAgentInputPrompt[], outputPrompt: IAIModelPrompt, usage: IAIModelUsage) {
+    addAgentRecord(agentName: string, tags: string[], inputPrompts: IAIAgentInputPrompt[], outputPrompt: IAIModelPrompt, usage: IAIModelUsage) {
         const record: IAIAgentRecord = {
             id: this.history.length,
+            tags,
             agentName: agentName,
             inputPrompts,
             outputPrompt,

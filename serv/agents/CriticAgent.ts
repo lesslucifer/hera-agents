@@ -39,7 +39,7 @@ export class CriticAgent extends SimpleAIAgent {
         const output = await this.runInFakeContext(clonedContext)
         const lastAgentRecord = _.findLast(clonedContext.history, r => r.agentName === this.targetAgent.name)
 
-        ctx.addAgentRecord(this.targetAgent.name, lastAgentRecord.inputPrompts, output, clonedContext.totalUsage)
+        ctx.addAgentRecord(this.targetAgent.name, lastAgentRecord.tags, lastAgentRecord.inputPrompts, output, clonedContext.totalUsage)
         return output
     }
 
@@ -63,16 +63,13 @@ export class CriticAgent extends SimpleAIAgent {
             // Generate critique
             const critiqueOutput = await ctx.execute(critiqueParts, this.systemPrompt);
             const critique = critiqueOutput.prompt.parts[0].text;
+            ctx.addAgentRecord(this.name, ["feedback"], critiqueParts, critiqueOutput.prompt, critiqueOutput.usage);
 
             // Check if the output is satisfactory
             if (critique.startsWith("NO_FURTHER_IMPROVEMENTS_NEEDED")) {
-                ctx.addAgentRecord(this.name, critiqueParts, critiqueOutput.prompt, critiqueOutput.usage);
                 break
             }
-
-            // Update the context with the critique
-            ctx.addAgentRecord(this.name, critiqueParts, critiqueOutput.prompt, critiqueOutput.usage);
-
+            
             // Prepare the agent for the next iteration
             ctx.addUserPrompt({ role: 'user', parts: [{ text: `Please improve your output based on this critique: ${critique}` }] });
 

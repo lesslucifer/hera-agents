@@ -10,7 +10,7 @@ export class SimpleAIAgent implements IAIAgent {
         this.shortDescription ??= this.description
     }
 
-    get tools(): IAITool[] {
+    get outputTags(): string[] {
         return []
     }
 
@@ -26,8 +26,8 @@ export class SimpleAIAgent implements IAIAgent {
             prompts.push(request)
         }
 
-        const output = await ctx.execute(prompts, this.systemPrompt, this.tools)
-        ctx.addAgentRecord(this.name, prompts, output.prompt, output.usage)
+        const output = await ctx.execute(prompts, this.systemPrompt)
+        ctx.addAgentRecord(this.name, [], prompts, output.prompt, output.usage)
         return output.prompt
     }
 }

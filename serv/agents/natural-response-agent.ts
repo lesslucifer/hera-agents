@@ -24,6 +24,10 @@ export class NaturalResponseAgent extends SimpleAIAgent {
         Your goal is to make the AI's responses feel more human-like and engaging while preserving the informational content and accuracy of the original output.`;
     }
 
+    get outputTags(): string[] {
+        return ["answer"]
+    }
+
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
         const [history, lastRecord] = AIAgentHelper.splitLastRecord(ctx.history);
         await AIAgentHelper.constructSummaries(ctx, history);

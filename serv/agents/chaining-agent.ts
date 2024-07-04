@@ -32,7 +32,7 @@ export class ChainingAIAgent extends SimpleAIAgent {
     }
 
     private async handleError(ctx: AIAgentContext, error: any, lastAgent: IAIAgent): Promise<IAIAgentResponse> {
-        ctx.addAgentRecord(this.name, [], {
+        ctx.addAgentRecord(this.name, ["error"], [], {
             role: 'model',
             parts: [
                 { text: `An error occured during the process agent named ${lastAgent?.name}. Please handle this situation and provide guidance. Error details: ${YAML.stringify(error)}` },
