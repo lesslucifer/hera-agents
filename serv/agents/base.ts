@@ -1,6 +1,6 @@
 import _ from "lodash"
 import ENV from "../../glob/env"
-import { AIModelUsageEmpty, IAIModel, IAIModelDynamicPrompt, IAIModelGenerationRequest, IAIModelGenerationRequestCustomConfig, IAIModelOutput, IAIModelPrompt, IAIModelUsage, IAIToolDeclaration, mkPrompt } from "../models/base"
+import { IAIModel, IAIModelDynamicPrompt, IAIModelGenerationRequest, IAIModelGenerationRequestCustomConfig, IAIModelOutput, IAIModelPrompt, IAIModelUsage, IAIToolDeclaration, emptyAIModelUsage, mkPrompt } from "../models/base"
 import { GeminiModel } from "../models/gemini"
 import { AIAgentHelper } from "./helper"
 
@@ -9,23 +9,22 @@ export type IAIAgentResponse = IAIModelPrompt
 export type IAIAgentInputPrompt = IAIModelDynamicPrompt // TODO: input prompt path
 
 export interface IAIAgentModelRequestHistoryEntry {
-    inputPrompts: IAIAgentInputPrompt[],
-    outputPrompt: IAIModelPrompt,
-    usage: IAIModelUsage
 }
 
 export interface IAIAgentRecord {
     id: number
     agentName?: string
-    history: IAIAgentModelRequestHistoryEntry[]
-    summary: string[]
+    summary?: string
     embeeding?: number[]
-    usage?: IAIModelUsage
+    inputPrompts: IAIAgentInputPrompt[],
+    outputPrompt: IAIModelPrompt,
+    usage: IAIModelUsage
 }
 
 export class AIAgentContext {
     model: IAIModel
     history: IAIAgentRecord[] = []
+    totalUsage: IAIModelUsage = emptyAIModelUsage()
 
     constructor() {
         this.model = new GeminiModel(ENV.GEMINI_KEY, 'gemini-1.5-flash-latest')
@@ -34,31 +33,26 @@ export class AIAgentContext {
     addUserPrompt(prompt: IAIModelDynamicPrompt) {
         const record: IAIAgentRecord = {
             id: this.history.length,
-            history: [{
-                inputPrompts: [],
-                outputPrompt: { ...mkPrompt(prompt), role: 'user' },
-                usage: AIModelUsageEmpty
-            }],
-            summary: [],
-            usage: AIModelUsageEmpty
+            inputPrompts: [],
+            outputPrompt: { ...mkPrompt(prompt), role: 'user' },
+            usage: emptyAIModelUsage()
         }
         this.history.push(record)
         return record
     }
 
-    addAgentRecord(agent: IAIAgent, history: IAIAgentModelRequestHistoryEntry[]) {
+    addAgentRecord(agentName: string, inputPrompts: IAIAgentInputPrompt[], outputPrompt: IAIModelPrompt, usage: IAIModelUsage) {
         const record: IAIAgentRecord = {
             id: this.history.length,
-            agentName: agent.name,
-            history,
-            summary: [],
-            usage: {
-                inputToken: _.sum(history.map(h => h.usage.inputToken)),
-                outputToken: _.sum(history.map(h => h.usage.outputToken)),
-                totalToken: _.sum(history.map(h => h.usage.totalToken)),
-            }
+            agentName: agentName,
+            inputPrompts,
+            outputPrompt,
+            usage
         }
         this.history.push(record)
+        this.totalUsage.inputToken += usage.inputToken
+        this.totalUsage.outputToken += usage.outputToken
+        this.totalUsage.totalToken += usage.totalToken
         return record
     }
 
@@ -81,53 +75,25 @@ export class AIAgentContext {
         return response;
     }
 
-    session(agent: IAIAgent, input: IAIAgentInputPrompt[]) {
-        return new AIAgentContextSession(this, agent, input)
-    }
-
     get conversationPrompts() {
-        return this.history.flatMap(h => h.history.map(h => h.outputPrompt))
-    }
-}
-
-export class AIAgentContextSession {
-    private context: AIAgentContext;
-    private inputPrompts: IAIAgentInputPrompt[]
-    private history: IAIAgentModelRequestHistoryEntry[] = [];
-    private lastOutput: IAIModelPrompt = null
-
-    constructor(context: AIAgentContext, private agent: IAIAgent, private orignalInput: IAIAgentInputPrompt[]) {
-        this.context = context;
-        this.inputPrompts = [...orignalInput]
+        return this.history.flatMap(r => r.outputPrompt)
     }
 
-    async execute(
-        prompt: IAIModelDynamicPrompt,
-        sysInstruction?: string,
-        tools?: IAIToolDeclaration[],
-        customConfig?: IAIModelGenerationRequestCustomConfig
-    ): Promise<IAIModelPrompt> {
-        const inputPrompts = [
-            ...this.inputPrompts,
-            ...this.history.map(h => h.outputPrompt),
-            prompt
-        ]
-        const response = await this.context.execute(inputPrompts, sysInstruction, tools, customConfig);
-
-        const historyEntry: IAIAgentModelRequestHistoryEntry = {
-            inputPrompts: inputPrompts,
-            outputPrompt: response.prompt,
-            usage: response.usage ?? AIModelUsageEmpty
-        };
-        this.history.push(historyEntry);
-
-        this.lastOutput = response.prompt
-        return response.prompt;
+    get lastOutputPrompt() {
+        return _.last(this.history)?.outputPrompt
     }
 
-    end() {
-        this.context.addAgentRecord(this.agent, this.history)
-        return this.lastOutput
+    clone(): AIAgentContext {
+        const clonedContext = new AIAgentContext();
+        
+        // Clone the model
+        clonedContext.model = this.model
+
+        // Clone the history
+        clonedContext.history = [...this.history]
+        clonedContext.totalUsage = { ...this.totalUsage };
+
+        return clonedContext;
     }
 }
 
@@ -136,5 +102,5 @@ export interface IAIAgent {
     readonly description: string
     readonly shortDescription?: string
 
-    run(ctx: AIAgentContext): Promise<IAIAgentResponse>
+    run(ctx: AIAgentContext, request?: IAIModelDynamicPrompt): Promise<IAIAgentResponse>
 }

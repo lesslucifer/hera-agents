@@ -1,13 +1,9 @@
-import _ from "lodash";
-import { IAIModelDynamicPrompt } from "../models/base";
-import { AIAgentContext } from "./base";
+import { IAIModelDynamicPrompt, IAIModelPrompt } from "../models/base";
+import { AIAgentContext, IAIAgent } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
-import { AIAgentHelper } from "./helper";
 
 export class ManagerAIAgent extends SimpleAIAgent {
-    static readonly ISNT = new ManagerAIAgent()
-
-    constructor() {
+    constructor(private agents: IAIAgent[]) {
         super(ManagerAIAgent.name,
             "The Manager AI Agent routes user messages to the most suitable specialized AI, ensuring efficient and accurate responses based on user intent and conversation history"
             , "Routes user messages to the best-suited specialized AI agent")
@@ -26,15 +22,22 @@ export class ManagerAIAgent extends SimpleAIAgent {
     }
 
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
-        const lastRecord = AIAgentHelper.lastOutput(ctx.history)
-
-        if (lastRecord.role === 'user') {
-            return ctx.conversationPrompts
-        }
-
+        if (!this.agents.length) throw new Error(`Manager agent cannot proceed. No agent configured`)
         return [
             ...ctx.conversationPrompts,
-            'Proceed to continue according to the given conversation'
+            [
+                `This is the available agents:`,
+                ...this.agents.map(agent => `Agent Name: ${agent.name}; Description: ${agent.description}`)
+            ].join('\n')
         ]
+    }
+
+    async run(ctx: AIAgentContext): Promise<IAIModelPrompt> {
+        const output = await super.run(ctx)
+        const jsonOutput = JSON.parse(output.parts[0].text)
+        const { agent: agentName } = jsonOutput
+        const agent = this.agents.find(ag => ag.name === agentName)
+        if (!agent) throw new Error(`Agent Manager cannot find any suitable agent`)
+        return await agent.run(ctx)
     }
 }

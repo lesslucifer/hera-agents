@@ -84,7 +84,7 @@ export interface IAIModelUsage {
     totalToken: number
 }
 
-export const AIModelUsageEmpty: IAIModelUsage = { inputToken: 0, outputToken: 0, totalToken: 0 }
+export const emptyAIModelUsage = () => ({ inputToken: 0, outputToken: 0, totalToken: 0 })
 
 export interface IAIModelOutput {
     prompt: IAIModelPrompt

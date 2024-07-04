@@ -1,16 +1,17 @@
 import _ from "lodash";
 import { AIAgentContext, IAIAgentInputPrompt, IAIAgentRecord } from "./base";
 import { SummaryAIAgent } from "./summary-agent";
+import { IAIModelUsage } from "../models/base";
 
 export class AIAgentHelper {
     static async getRecordSummary(ctx: AIAgentContext, record: IAIAgentRecord) {
         if (!record.summary) {
             try {
                 const summary = await SummaryAIAgent.INST.run(ctx)
-                record.summary.push(_.first(summary.parts)?.text ?? 'Empty')
+                record.summary = _.first(summary.parts)?.text ?? 'Empty'
             }
             catch (err) {
-                record.summary.push('No information. Cannot summarize')
+                record.summary = 'No information. Cannot summarize'
             }
         }
 
@@ -31,7 +32,12 @@ export class AIAgentHelper {
         }
     }
 
-    static lastOutput(history: IAIAgentRecord[]) {
-        return _.last(_.last(history)?.history)?.outputPrompt
+    static accumulateUsage(target: IAIModelUsage, ...incs: IAIModelUsage[]) {
+        for (const inc of incs) {
+            target.inputToken += inc.inputToken
+            target.outputToken += inc.outputToken
+            target.totalToken += inc.totalToken
+        }
+        return target
     }
 }

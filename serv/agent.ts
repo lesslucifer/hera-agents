@@ -51,7 +51,7 @@ class AIAgentService {
         const systemPrompt = `You are an AI planning agent work with other agents to provide the best answer to the user query.
             Your job is making an action plan (DO NOT use the functions or execute the plan yourself) by carefully consider:
             - The user query, what information do you need to succesfully fulfill the user question
-            - Other agents information / actions / feedbacks about your previous plan. You should you it to optimize your plans
+            - Other agents information / actions / feedbacks about your previous plan. You should do it to optimize your plans
             - You can use the provided functions if needed
             - You can also use your knowledge to construct the plan if it's suitable
 

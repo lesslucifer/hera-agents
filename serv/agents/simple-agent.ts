@@ -18,16 +18,16 @@ export class SimpleAIAgent implements IAIAgent {
         return []
     }
 
-    async run(ctx: AIAgentContext): Promise<IAIAgentResponse> {
+    async run(ctx: AIAgentContext, request?: IAIModelDynamicPrompt): Promise<IAIAgentResponse> {
         const prompts = await this.userPrompt(ctx)
         if (!prompts) return { role: 'model', parts: [] }
 
+        if (request) {
+            prompts.push(request)
+        }
+
         const output = await ctx.execute(prompts, this.systemPrompt, this.tools)
-        ctx.addAgentRecord(this, [{
-            inputPrompts: prompts,
-            outputPrompt: output.prompt,
-            usage: output.usage
-        }])
+        ctx.addAgentRecord(this.name, prompts, output.prompt, output.usage)
         return output.prompt
     }
 }
