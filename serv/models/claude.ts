@@ -12,7 +12,7 @@ import {
     ToolUseBlockParam,
     Tool
 } from '@anthropic-ai/sdk/resources/messages';
-import { IAIModel, IAIModelGenerationRequest, IAIModelOutputPrompt, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration, IAIModelPromptRole } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration, IAIModelPromptRole, IAIModelOutput } from './base';
 import _ from 'lodash';
 import * as YAML from 'json-to-pretty-yaml';
 
@@ -93,12 +93,14 @@ export class ClaudeModel implements IAIModel {
         throw new Error('Invalid part format');
     }
 
-    private convertAnthropicResponseToAIModelOutput(message: Message): IAIModelOutputPrompt {
+    private convertAnthropicResponseToAIModelOutput(message: Message): IAIModelOutput {
         const parts: IAIModelPromptPart[] = this.convertContentBlocksToPromptParts(message.content);
 
         return {
-            role: this.mapRoleFromAnthropic(message.role),
-            parts,
+            prompt: {
+                role: this.mapRoleFromAnthropic(message.role),
+                parts,
+            },
             usage: message.usage ? {
                 inputToken: message.usage.input_tokens,
                 outputToken: message.usage.output_tokens,
@@ -128,7 +130,7 @@ export class ClaudeModel implements IAIModel {
         }
     }
 
-    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutputPrompt> {
+    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
         const messages = req.prompts.map(prompt => this.convertPromptToAnthropicFormat(prompt as IAIModelPrompt));
 
         const anthropicRequest: MessageCreateParams = {

@@ -84,10 +84,13 @@ export interface IAIModelUsage {
     totalToken: number
 }
 
-export interface IAIModelOutputPrompt extends IAIModelPrompt {
+export const AIModelUsageEmpty: IAIModelUsage = { inputToken: 0, outputToken: 0, totalToken: 0 }
+
+export interface IAIModelOutput {
+    prompt: IAIModelPrompt
     usage?: IAIModelUsage
 }
 
 export interface IAIModel {
-    generate(req: IAIModelGenerationRequest): Promise<IAIModelOutputPrompt>
+    generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput>
 }

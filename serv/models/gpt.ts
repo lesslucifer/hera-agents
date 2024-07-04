@@ -10,7 +10,7 @@ import {
     ChatCompletionTool,
     ChatCompletionUserMessageParam
 } from 'openai/resources/chat';
-import { IAIModel, IAIModelGenerationRequest, IAIModelOutputPrompt, IAIModelPrompt, IAIModelPromptPart, IAIModelPromptRole, IAIToolDeclaration } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIModelPromptRole, IAIModelUsage, IAIToolDeclaration } from './base';
 
 export class GPTModel implements IAIModel {
     private openai: OpenAI;
@@ -108,7 +108,7 @@ export class GPTModel implements IAIModel {
         throw new Error('Invalid part format');
     }
 
-    private extractUsageData(response: ChatCompletion): IAIModelOutputPrompt['usage'] {
+    private extractUsageData(response: ChatCompletion): IAIModelUsage {
         return response.usage ? {
             inputToken: response.usage.prompt_tokens,
             outputToken: response.usage.completion_tokens,
@@ -116,7 +116,7 @@ export class GPTModel implements IAIModel {
         } : undefined;
     }
 
-    private convertGPTResponseToAIModelOutput(message: ChatCompletion.Choice['message']): IAIModelOutputPrompt {
+    private convertGPTResponseToAIModelPrompt(message: ChatCompletion.Choice['message']): IAIModelPrompt {
         let parts: IAIModelPromptPart[] = [];
         const content = message.content;
 
@@ -149,13 +149,11 @@ export class GPTModel implements IAIModel {
 
         return {
             role: message.role === 'assistant' ? 'model' : message.role as IAIModelPromptRole,
-            parts,
-            // Note: Usage data is not available in the message itself
-            usage: undefined
-        };
+            parts
+        }
     }
 
-    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutputPrompt> {
+    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
         const gptRequest: ChatCompletionCreateParams = {
             model: this.model,
             messages: req.prompts.map(prompt => this.convertPromptToGPTFormat(prompt as IAIModelPrompt)),
@@ -185,7 +183,7 @@ export class GPTModel implements IAIModel {
             }
             
             return {
-                ...this.convertGPTResponseToAIModelOutput(gptResponse),
+                prompt: this.convertGPTResponseToAIModelPrompt(gptResponse),
                 usage: this.extractUsageData(result)
             };
         } catch (error) {

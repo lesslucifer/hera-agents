@@ -1,7 +1,8 @@
 import { Content } from "@google/generative-ai"
+import { IAIModelPrompt } from "../serv/models/base"
 
 export interface IConversation {
     question: string
-    history: Content[]
-    answer: Content
+    history: IAIModelPrompt[]
+    answer: IAIModelPrompt
 }

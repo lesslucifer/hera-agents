@@ -1,5 +1,5 @@
 import { Content, FunctionDeclaration, FunctionDeclarationSchema, GoogleGenerativeAI, GenerativeModel, GenerateContentResult, GenerateContentRequest, GenerateContentResponse, Part } from '@google/generative-ai';
-import { IAIModel, IAIModelGenerationRequest, IAIModelOutputPrompt, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration } from './base';
 import _ from 'lodash';
 
 export class GeminiModel implements IAIModel {
@@ -64,15 +64,17 @@ export class GeminiModel implements IAIModel {
         throw new Error('Invalid part format');
     }
 
-    private convertGeminiResponseToAIModelOutput(response: GenerateContentResponse): IAIModelOutputPrompt {
+    private convertGeminiResponseToAIModelOutput(response: GenerateContentResponse): IAIModelOutput {
         if (!response.candidates || response.candidates.length === 0) {
             throw new Error('No candidates in response');
         }
     
         const candidate = response.candidates[0];
         return {
-            role: 'model',
-            parts: candidate.content.parts.map(this.convertGeminiPartToAIModelPart),
+            prompt: {
+                role: 'model',
+                parts: candidate.content.parts.map(this.convertGeminiPartToAIModelPart),
+            },
             usage: response.usageMetadata ? {
                 inputToken: response.usageMetadata.promptTokenCount,
                 outputToken: response.usageMetadata.candidatesTokenCount,
@@ -112,7 +114,7 @@ export class GeminiModel implements IAIModel {
         throw new Error('Invalid Gemini part format');
     }
 
-    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutputPrompt> {
+    async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
         const geminiRequest: GenerateContentRequest = {
             contents: req.prompts.map(prompt => this.convertPromptToGeminiFormat(prompt as IAIModelPrompt)),
             generationConfig: {

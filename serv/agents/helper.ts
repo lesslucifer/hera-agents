@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { AIAgentContext, IAIAgentInputPrompt, IAIAgentPromptPath, IAIAgentRecord } from "./base";
+import { AIAgentContext, IAIAgentInputPrompt, IAIAgentRecord } from "./base";
 import { SummaryAIAgent } from "./summary-agent";
 
 export class AIAgentHelper {
@@ -29,10 +29,6 @@ export class AIAgentHelper {
         for (const chunk of chunks) {
             await Promise.all(chunk.map(r => this.getRecordSummary(ctx, r)))
         }
-    }
-
-    static isPromptPath(inputPrompt: IAIAgentInputPrompt): inputPrompt is IAIAgentPromptPath {
-        return typeof inputPrompt === 'object' && 'recordId' in inputPrompt
     }
 
     static lastOutput(history: IAIAgentRecord[]) {
