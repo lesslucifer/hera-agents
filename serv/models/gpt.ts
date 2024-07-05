@@ -10,7 +10,7 @@ import {
     ChatCompletionTool,
     ChatCompletionUserMessageParam
 } from 'openai/resources/chat';
-import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIModelPromptRole, IAIModelUsage, IAIToolDeclaration } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIModelPromptRole, IAIModelUsage, IAIToolDeclaration, mkPrompt } from './base';
 
 export class GPTModel implements IAIModel {
     private openai: OpenAI;
@@ -156,7 +156,7 @@ export class GPTModel implements IAIModel {
     async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
         const gptRequest: ChatCompletionCreateParams = {
             model: this.model,
-            messages: req.prompts.map(prompt => this.convertPromptToGPTFormat(prompt as IAIModelPrompt)),
+            messages: req.prompts.map(prompt => this.convertPromptToGPTFormat(mkPrompt(prompt))),
             temperature: req.customConfig?.temperature,
             top_p: req.customConfig?.topP,
             n: 1,

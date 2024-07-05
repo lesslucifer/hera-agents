@@ -27,7 +27,7 @@ export class SimpleAIAgent implements IAIAgent {
         }
 
         const output = await ctx.execute(prompts, this.systemPrompt)
-        ctx.addAgentRecord(this.name, [], prompts, output.prompt, output.usage)
+        ctx.addAgentRecord(this.name, this.outputTags, prompts, output.prompt, output.usage)
         return output.prompt
     }
 }

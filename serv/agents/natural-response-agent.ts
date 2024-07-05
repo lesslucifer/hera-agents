@@ -29,21 +29,11 @@ export class NaturalResponseAgent extends SimpleAIAgent {
     }
 
     async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
-        const [history, lastRecord] = AIAgentHelper.splitLastRecord(ctx.history);
-        await AIAgentHelper.constructSummaries(ctx, history);
-
-        const conversationSummary = history
-            .map(record => `${record.agentName || 'User'}: ${record.summary || _.first(record.outputPrompt.parts)?.text}`)
-            .join('\n');
-
-        const lastOutput = _.first(lastRecord.outputPrompt.parts)?.text || '';
-
         return [
+            ...ctx.conversationPrompts,
             {
                 role: 'user',
                 parts: [
-                    { text: "Here's a summary of the conversation so far:\n\n" + conversationSummary },
-                    { text: "\n\nThe last output from the previous agent was:\n\n" + lastOutput },
                     { text: "\n\nPlease rewrite this response in a more natural, conversational way, ensuring it addresses the user's original query and maintains the accuracy of the information. Consider the entire conversation context in your reformulation." }
                 ]
             }

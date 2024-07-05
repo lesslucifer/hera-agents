@@ -49,7 +49,7 @@ export function mkPrompt(prompt: IAIModelDynamicPrompt): IAIModelPrompt {
 
 // Type guard functions
 export function isIAIModelPrompt(prompt: IAIModelDynamicPrompt): prompt is IAIModelPrompt {
-    return _.isPlainObject(prompt) && 'parts' in (prompt as object) && _.isArray((prompt as IAIModelPrompt).parts);
+    return _.isPlainObject(prompt) && 'parts' in (prompt as object) && _.isArray((prompt as IAIModelPrompt)?.parts);
 }
 
 export function isIAIModelPromptPart(prompt: IAIModelDynamicPrompt): prompt is IAIModelPromptPart {

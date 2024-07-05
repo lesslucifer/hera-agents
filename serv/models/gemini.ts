@@ -1,5 +1,5 @@
 import { Content, FunctionDeclaration, FunctionDeclarationSchema, GoogleGenerativeAI, GenerativeModel, GenerateContentResult, GenerateContentRequest, GenerateContentResponse, Part } from '@google/generative-ai';
-import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelOutput, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration, mkPrompt } from './base';
 import _ from 'lodash';
 
 export class GeminiModel implements IAIModel {
@@ -116,7 +116,7 @@ export class GeminiModel implements IAIModel {
 
     async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
         const geminiRequest: GenerateContentRequest = {
-            contents: req.prompts.map(prompt => this.convertPromptToGeminiFormat(prompt as IAIModelPrompt)),
+            contents: req.prompts.map(prompt => this.convertPromptToGeminiFormat(mkPrompt(prompt))),
             generationConfig: {
                 temperature: req.customConfig?.temperature,
                 topK: req.customConfig?.topK,

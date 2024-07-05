@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { IAIModelDynamicPrompt, IAIModelPrompt } from "../models/base";
 import { AIAgentContext, IAIAgent } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
@@ -38,7 +39,9 @@ export class ManagerAIAgent extends SimpleAIAgent {
 
     async run(ctx: AIAgentContext): Promise<IAIModelPrompt> {
         const output = await super.run(ctx)
-        const jsonOutput = JSON.parse(output.parts[0].text)
+        const outputString = _.first(output.parts)?.text ?? ''
+        const jsonMatch = outputString.slice(outputString.indexOf('{'), outputString.lastIndexOf('}') + 1)
+        const jsonOutput = JSON.parse(jsonMatch)
         const { agent: agentName } = jsonOutput
         const agent = this.agents.find(ag => ag.name === agentName)
         if (!agent) throw new Error(`Agent Manager cannot find any suitable agent`)

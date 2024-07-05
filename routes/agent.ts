@@ -9,6 +9,7 @@ class AgentRouter extends ExpressRouter {
         if (!q) return
         return await Agent.ask(q)
     }
+    
     @GET({ path: "/conversation/:id" })
     async debug(@Params('id') id: string) {
         if (id == 'null') return await Conversation.findOne({}, { sort: { _id: -1 } })

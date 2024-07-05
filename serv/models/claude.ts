@@ -12,7 +12,7 @@ import {
     ToolUseBlockParam,
     Tool
 } from '@anthropic-ai/sdk/resources/messages';
-import { IAIModel, IAIModelGenerationRequest, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration, IAIModelPromptRole, IAIModelOutput } from './base';
+import { IAIModel, IAIModelGenerationRequest, IAIModelPrompt, IAIModelPromptPart, IAIToolDeclaration, IAIModelPromptRole, IAIModelOutput, mkPrompt } from './base';
 import _ from 'lodash';
 import * as YAML from 'json-to-pretty-yaml';
 
@@ -131,7 +131,7 @@ export class ClaudeModel implements IAIModel {
     }
 
     async generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput> {
-        const messages = req.prompts.map(prompt => this.convertPromptToAnthropicFormat(prompt as IAIModelPrompt));
+        const messages = req.prompts.map(prompt => this.convertPromptToAnthropicFormat(mkPrompt(prompt)));
 
         const anthropicRequest: MessageCreateParams = {
             model: this.model,
