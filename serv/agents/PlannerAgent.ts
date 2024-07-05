@@ -19,8 +19,7 @@ export class PlannerAgent extends SimpleAIAgent {
         5. Create a step-by-step plan that leads to fulfilling the user's query.
         6. Ensure each step is actionable and based on facts from tools or conversation history.
         7. Express the plan in plain text, avoiding any code or scripts.
-        8. Include steps for gathering necessary information if it's not readily available.
-        9. Optimize the plan based on any feedback or actions from previous interactions.
+        8. Optimize the plan based on any feedback or actions from previous interactions.
 
         Your output should be a clear, detailed plan that an Execution AI can follow to achieve the user's goal.`;
             }

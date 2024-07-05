@@ -9,7 +9,6 @@ interface Step {
     index: number;
     dependencies: number[];
     description: string;
-    completed: boolean;
 }
 
 export class ExecutionAgent extends SimpleAIAgent {
@@ -37,11 +36,11 @@ export class ExecutionAgent extends SimpleAIAgent {
         6. If a tool returns an error, analyze it and provide a report with relevant feedback for improvement.
         7. Double-check parameters before calling tools, and if information is missing or unsuitable, attempt to figure it out based on context.
         8. Optimize execution by running independent steps in parallel when possible.
+        9. Try to make use the information retreived in the history, don't repeat yourself
 
         Your output should be one of the following:
         1. A function call to a tool.
         2. A status update or request for clarification.
-        3. A final result or completion message (In this case, the output message must start with the keyword: PLAN_EXECUTION_COMPLETED).
 
         Always provide clear, concise updates on the execution progress.`;
     }
@@ -61,7 +60,6 @@ export class ExecutionAgent extends SimpleAIAgent {
                         index: parseInt(index),
                         dependencies: dependencies ? dependencies.split(',').map(d => parseInt(d.trim())) : [],
                         description: description.trim(),
-                        completed: false
                     };
                 }
                 else {
@@ -69,7 +67,6 @@ export class ExecutionAgent extends SimpleAIAgent {
                         index: i + 1,
                         dependencies: _.range(1, i + 1),
                         description: line,
-                        completed: false
                     }
                 }
             })
@@ -94,12 +91,14 @@ export class ExecutionAgent extends SimpleAIAgent {
             usage: IAIModelUsage
         }[]> = {}
 
+        console.log(`Plan`, plan)
         for (const step of steps) {
+            console.log(`Run step`, step.index, step.description)
             if (Date.now() - startTime > this.timeoutMs) {
-                throw new Error("Execution timed out. Here's the current status: " + steps.map(step => `[Step ${step.index}] ${step.description}: ${step.completed ? 'Completed' : 'Not completed'}`).join(', '))
+                throw new Error("Execution timed out. Here's the current status: " + steps.map(step => `[Step ${step.index}] ${step.description}: ${!!stepRecords[step.index] ? 'Completed' : 'Not completed'}`).join(', '))
             }
 
-            const incompletedDeps = step.dependencies.filter(dep => dep >= steps.length || !steps[dep]?.completed)
+            const incompletedDeps = step.dependencies.filter(dep => dep >= steps.length || !stepRecords[dep])
             if (incompletedDeps.length) {
                 throw new Error(`Cannot execute step ${step.index}: ${step.description}! Not all of its dependencies are completed; ${incompletedDeps.join(',')}`)
             }
@@ -127,7 +126,7 @@ export class ExecutionAgent extends SimpleAIAgent {
                     stepRecords[step.index].push({
                         inputPrompts: [],
                         outputPrompt: {
-                            role: 'function', parts: [{ functionName: part.functionName, functionResponse: toolResult }]
+                            role: 'function', parts: [{ functionName: part.functionName, functionResponse: _.first(toolResult.parts).functionResponse }]
                         },
                         usage: emptyAIModelUsage()
                     });

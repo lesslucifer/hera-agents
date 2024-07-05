@@ -12,7 +12,7 @@ interface JiraIssueExtractField {
     f?: (iss: any) => any
 }
 
-const IssueExtractFields: _.Dictionary<JiraIssueExtractField> = _.keyBy([
+const IssueExtractFields: JiraIssueExtractField[] = [
     { name: "ID", field: "id" },
     { name: "Key", field: "key" },
     { name: "Priority", field: "fields.priority.name" },
@@ -23,12 +23,12 @@ const IssueExtractFields: _.Dictionary<JiraIssueExtractField> = _.keyBy([
     { name: "Story Points", f: iss => _.get(iss, 'fields.customfield_10033') ?? 0 },
     { name: "Developers", f: getIssueDevelopers, expand: ['changelog'], defaultContent: 'None' },
     { name: "Comments", f: getComments, defaultContent: 'None' },
-    // { name: "Assignee", field: 'fields.assignee.displayName' },
-    { name: "project", field: 'fields.project.key' }
-], f => f.name)
+    { name: "Assignee", field: 'fields.assignee.displayName' },
+    { name: "Project", field: 'fields.project.key' }
+]
 
 function getIssueDevelopers(iss: any) {
-    const histories = _.get(iss, 'changelog.histories')
+    const histories = _.get(iss, 'changelog.histories', [])
     const developers = {}
     for (const change of histories) {
         const items = change?.items ?? []
@@ -51,7 +51,7 @@ function getComments(iss: any) {
 
 export class GetJiraIssuesTool implements IAITool {
     readonly name: string = "GetTicketContent"
-    readonly description = "Get batch content of a ticket by keys (MAX: 100)"
+    readonly description = "Get batch content of a ticket by keys (MAX: 100). Ticket contents includes: " + IssueExtractFields.map(f => f.name).join(', ')
     readonly parameters = {
         "type": "OBJECT",
         "properties": {
@@ -62,23 +62,13 @@ export class GetJiraIssuesTool implements IAITool {
                     "type": "STRING",
                     "description": "key of the ticket"
                 }
-            },
-            "fields": {
-                "type": "ARRAY",
-                "description": "list of field to extract, optional",
-                "items": {
-                    "type": "STRING",
-                    "format": "enum",
-                    "enum": Object.keys(IssueExtractFields)
-                }
             }
         },
         "required": ["keys"]
     }
 
     async apply({ keys, fields }: { keys: string[], fields: string[] }): Promise<IAIModelPrompt> {
-        const extractFields = this.getFields(fields)
-        const expand = extractFields.flatMap(f => f.expand ?? []).join(',')
+        const expand = true // extractFields.flatMap(f => f.expand ?? []).join(',')
         let issues = []
         try {
             const jql = Object.entries({
@@ -105,29 +95,26 @@ export class GetJiraIssuesTool implements IAITool {
             parts: [
                 {
                     functionResponse: {
-                        name: this.name,
-                        response: {
-                            issues: issues.map(issue => this.extractIssueContent(issue, extractFields))
-                        }
+                        issues: issues.map(issue => this.extractIssueContent(issue, IssueExtractFields))
                     }
                 }
             ]
         }
     }
 
-    private getFields(fields?: string[]) {
-        if (!fields?.length) {
-            fields = ['Key', 'Title', 'Description']
-        }
-        if (!fields.includes('Key')) {
-            fields = ['Key', ...fields]
-        }
-        if (!fields.includes('project')) {
-            fields = ['project', ...fields]
-        }
+    // private getFields(fields?: string[]) {
+    //     if (!fields?.length) {
+    //         fields = ['Key', 'Title', 'Description']
+    //     }
+    //     if (!fields.includes('Key')) {
+    //         fields = ['Key', ...fields]
+    //     }
+    //     if (!fields.includes('project')) {
+    //         fields = ['project', ...fields]
+    //     }
 
-        return fields.filter(f => !!IssueExtractFields[f]).map(f => IssueExtractFields[f])
-    }
+    //     return fields.filter(f => !!IssueExtractFields[f]).map(f => IssueExtractFields[f])
+    // }
 
     private extractIssueContent(issue: any, fields: JiraIssueExtractField[]) {
         return fields.map(f => {

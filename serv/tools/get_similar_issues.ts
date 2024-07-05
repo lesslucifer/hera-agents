@@ -46,10 +46,7 @@ export class GetTicketByDescription implements IAITool {
             parts: [
                 {
                     functionResponse: {
-                        name: this.name,
-                        response: {
-                            issueKeys: results.map(r => r.payload.key)
-                        }
+                        issueKeys: results.map(r => r.payload.key)
                     }
                 }
             ]
