@@ -10,34 +10,24 @@ import { GetTicketByDescription } from "../tools/get_similar_issues";
 import { ExecutionAgent } from "./ExecutionAgent";
 import { CriticAgent } from "./CriticAgent";
 
-export class JiraAgent extends SimpleAIAgent {
-    private jiraTools: IAITool[];
-    private agent: ChainingAIAgent
-
+export class JiraAgent extends ChainingAIAgent {
     constructor() {
-        super(
-            JiraAgent.name,
-            "An AI agent specialized in checking JIRA information and performing relevant actions for WFORD (Web & Backend) and MBL6 (Mobile) projects",
-            "Manages JIRA tasks and provides project insights"
-        );
-
         const tools = [
             new GetJiraIssuesTool(),
             new GetTicketByDescription()
         ]
-        this.systemPrompt = '';
 
-        this.agent = new ChainingAIAgent([
+        super([
             new PlannerAgent(tools),
             new ExecutionAgent(tools)
         ], new NaturalResponseAgent())
+        
+        this.name = JiraAgent.name
+        this.description = "An AI agent specialized in checking JIRA information and performing relevant actions for WFORD (Web & Backend) and MBL6 (Mobile) projects"
+        this.shortDescription = "Manages JIRA tasks and provides project insights"
     }
 
     get outputTags(): string[] {
         return ["jira", "project_management"]
-    }
-
-    run(ctx: AIAgentContext): Promise<IAIAgentResponse> {
-        return this.agent.run(ctx)
     }
 }
