@@ -1,6 +1,6 @@
 import * as YAML from 'json-to-pretty-yaml';
-import { emptyAIModelUsage } from "../models/base";
-import { AIAgentContext, IAIAgent, IAIAgentResponse } from "./base";
+import { emptyAIModelUsage, emptyPrompt } from "../models/base";
+import { AIAgentContext, AIAgentSession, IAIAgent, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 
 export class ChainingAIAgent extends SimpleAIAgent {
@@ -19,26 +19,22 @@ export class ChainingAIAgent extends SimpleAIAgent {
         this.systemPrompt = ``;
     }
 
-    async run(ctx: AIAgentContext): Promise<IAIAgentResponse> {
+    async run(sess: AIAgentSession): Promise<IAIAgentResponse> {
         let lastAgent: IAIAgent = null
         try {
             for (const agent of this.agents) {
                 lastAgent = agent
-                await agent.run(ctx)
+                sess.runAgent(agent)
             }
         } catch (error) {
-            return this.handleError(ctx, error, lastAgent);
+            return this.handleError(sess, error, lastAgent);
         }
     }
 
-    private async handleError(ctx: AIAgentContext, error: any, lastAgent: IAIAgent): Promise<IAIAgentResponse> {
-        ctx.addAgentRecord(this.name, ["error"], [], {
-            role: 'model',
-            parts: [
-                { text: `An error occured during the process agent named ${lastAgent?.name}. Please handle this situation and provide guidance. Error details: ${YAML.stringify(error)}` },
-            ]
-        }, emptyAIModelUsage())
+    private async handleError(sess: AIAgentSession, error: any, lastAgent: IAIAgent): Promise<IAIAgentResponse> {
+        sess.addAgentRecord(emptyPrompt('model'),
+            `An error occured during the process agent named ${lastAgent?.name}. Please handle this situation and provide guidance. Error details: ${YAML.stringify(error)}`)
 
-        return await this.fallbackAgent.run(ctx);
+        return await sess.runAgent(this.fallbackAgent, `An error occured. As a fallback agent, please handle it`)
     }
 }

@@ -21,6 +21,13 @@ export interface IAIModelPrompt {
 
 export type IAIModelDynamicPrompt = IAIModelPrompt | IAIModelPromptPart | string
 
+export function emptyPrompt(role: IAIModelPromptRole = 'user'): IAIModelPrompt {
+    return {
+        role: role,
+        parts: []
+    }
+}
+
 export function mkPrompt(prompt: IAIModelDynamicPrompt): IAIModelPrompt {
     if (_.isString(prompt)) {
         return {
@@ -92,5 +99,6 @@ export interface IAIModelOutput {
 }
 
 export interface IAIModel {
+    readonly description: string
     generate(req: IAIModelGenerationRequest): Promise<IAIModelOutput>
 }

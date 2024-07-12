@@ -25,6 +25,10 @@ export class ClaudeModel implements IAIModel {
         this.model = model;
     }
 
+    get description() {
+        return `CLAUDE_${this.model}`
+    }
+
     private mapRoleToAnthropic(role: IAIModelPromptRole): MessageParam['role'] {
         switch (role) {
             case 'user':

@@ -5,9 +5,13 @@ import _ from 'lodash';
 export class GeminiModel implements IAIModel {
     private model: GenerativeModel;
 
-    constructor(apiKey: string, modelName: string) {
+    constructor(apiKey: string, private modelName: string) {
         const genAI = new GoogleGenerativeAI(apiKey);
         this.model = genAI.getGenerativeModel({ model: modelName });
+    }
+
+    get description() {
+        return `GEMINI_${this.modelName}`
     }
 
     private convertToolsToGeminiFormat(tools: IAIToolDeclaration[]): FunctionDeclaration[] {

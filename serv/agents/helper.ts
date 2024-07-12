@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { AIAgentContext, IAIAgentInputPrompt, IAIAgentRecord } from "./base";
 import { SummaryAIAgent } from "./summary-agent";
-import { IAIModelUsage } from "../models/base";
+import { IAIModel, IAIModelPrompt, IAIModelPromptPart, IAIModelUsage } from "../models/base";
 
 export class AIAgentHelper {
     static async getRecordSummary(ctx: AIAgentContext, record: IAIAgentRecord) {
@@ -39,5 +39,17 @@ export class AIAgentHelper {
             target.totalToken += inc.totalToken
         }
         return target
+    }
+
+    static extendPrompt(prompt: IAIModelPrompt, parts: (string | IAIModelPromptPart)[], head = true) {
+        const toParts: IAIModelPromptPart[] = parts.map(p => typeof p === 'string' ? { text: p } : p)
+        return {
+            role: prompt.role,
+            parts: [
+                ...(head ? toParts : []),
+                ...prompt.parts,
+                ...(!head ? toParts : [])
+            ]
+        }
     }
 }

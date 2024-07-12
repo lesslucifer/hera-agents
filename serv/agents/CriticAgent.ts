@@ -1,6 +1,5 @@
-import _ from "lodash";
-import { IAIModelDynamicPrompt, IAIModelPrompt, emptyAIModelUsage } from "../models/base";
-import { AIAgentContext, IAIAgent, IAIAgentInputPrompt, IAIAgentResponse } from "./base";
+import { IAIModelDynamicPrompt, IAIModelPrompt, mkPrompt } from "../models/base";
+import { AIAgentSession, IAIAgent, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 
 export class CriticAgent extends SimpleAIAgent {
@@ -32,51 +31,39 @@ export class CriticAgent extends SimpleAIAgent {
         Your critique should be actionable and aimed at helping the agent produce better results in subsequent iterations.`;
     }
 
-    async run(ctx: AIAgentContext): Promise<IAIAgentResponse> {
-        const clonedContext = ctx.clone()
-        clonedContext.totalUsage = emptyAIModelUsage()
-
-        const output = await this.runInFakeContext(clonedContext)
-        const lastAgentRecord = _.findLast(clonedContext.history, r => r.agentName === this.targetAgent.name)
-
-        ctx.addAgentRecord(this.targetAgent.name, lastAgentRecord.tags, lastAgentRecord.inputPrompts, output, clonedContext.totalUsage)
-        return output
-    }
-
-    private async runInFakeContext(ctx: AIAgentContext) {
+    async run(sess: AIAgentSession): Promise<IAIAgentResponse> {
         const startTime = Date.now();
         let currentOutput: IAIAgentResponse | null = null;
         let iteration = 0;
 
         while (iteration < this.maxIterations && Date.now() - startTime < this.timeoutMs) {
             // Run the target agent
-            const agentOutput = await this.targetAgent.run(ctx);
-            currentOutput = agentOutput
+            currentOutput = await sess.runAgent(this.targetAgent);
 
             // Prepare the critique prompt
-            const critiqueParts: IAIModelDynamicPrompt[] = [
-                { role: 'user', parts: [{ text: `Agent objective: ${this.targetAgent.description}` }] },
-                { role: 'user', parts: [{ text: `Agent output:\n${JSON.stringify(agentOutput, null, 2)}` }] },
-                { role: 'user', parts: [{ text: 'Please provide a critique of the agent\'s output. Identify any issues and suggest improvements. If the output is satisfactory, start your response with "NO_FURTHER_IMPROVEMENTS_NEEDED" and explain why.' }] }
-            ];
+            const critisPrompt: IAIModelPrompt = {
+                role: 'user',
+                parts: [
+                    { text: `Agent objective: ${this.targetAgent.description}` },
+                    { text: `Agent output:\n${JSON.stringify(currentOutput, null, 2)}}` },
+                    { text: `Please provide a critique of the agent\'s output. Identify any issues and suggest improvements. If the output is satisfactory, start your response with "NO_FURTHER_IMPROVEMENTS_NEEDED" and explain why.` },
+                ]
+            }
 
             // Generate critique
-            const critiqueOutput = await ctx.execute(critiqueParts, this.systemPrompt);
-            const critique = critiqueOutput.prompt.parts[0].text;
-            ctx.addAgentRecord(this.name, ["feedback"], critiqueParts, critiqueOutput.prompt, critiqueOutput.usage);
+            const critiqueOutput = await sess.generate(critisPrompt);
+            const critique = critiqueOutput.outputPrompt.parts[0].text;
+            sess.addAgentRecord(critiqueOutput.outputPrompt, "Critic feedback", [critiqueOutput.id], ["feedback"]);
 
             // Check if the output is satisfactory
             if (critique.startsWith("NO_FURTHER_IMPROVEMENTS_NEEDED")) {
-                break
+                break;
             }
-            
-            // Prepare the agent for the next iteration
-            ctx.addUserPrompt({ role: 'user', parts: [{ text: `Please improve your output based on this critique: ${critique}` }] });
 
             iteration++;
         }
 
-        // If we've reached the maximum iterations or timeout, return the last output
-        return currentOutput || { role: 'model', parts: [{ text: "Failed to generate a satisfactory output within the given constraints." }] };
+        if (!currentOutput) throw new Error("Failed to generate a satisfactory output within the given constraints.")
+        return currentOutput
     }
 }

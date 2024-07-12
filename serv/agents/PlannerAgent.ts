@@ -1,10 +1,10 @@
-import { IAIModelDynamicPrompt, IAIModelPrompt } from "../models/base";
+import { IAIModelDynamicPrompt, IAIModelPrompt, mkPrompt } from "../models/base";
 import { IAITool } from "../tools";
-import { AIAgentContext } from "./base";
+import { AIAgentSession, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 
 export class PlannerAgent extends SimpleAIAgent {
-    constructor(public _tools: IAITool[]) {
+    constructor(public tools: IAITool[]) {
         super(
             PlannerAgent.name,
             "An AI agent specialized in creating detailed, actionable plans based on user queries, available tools, and conversation history",
@@ -22,35 +22,34 @@ export class PlannerAgent extends SimpleAIAgent {
         8. Optimize the plan based on any feedback or actions from previous interactions.
 
         Your output should be a clear, detailed plan that an Execution AI can follow to achieve the user's goal.`;
-            }
-
-    get tools() {
-        return this._tools
     }
 
     get outputTags(): string[] {
-        return ["plan"]
+        return ["plan"];
     }
 
-    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
+    async userPrompt(sess: AIAgentSession): Promise<IAIModelDynamicPrompt[]> {
         const toolDescriptions = this.tools.map(tool => 
             `Tool Name: ${tool.name}; Description: ${tool.description}`
         ).join('\n');
 
         return [
-            ...ctx.conversationPrompts,
-            {
-                role: 'user',
-                parts: [
-                    { text: `Create a detailed plan to address the user query` },
-                    { text: "Available tools:\n" + toolDescriptions },
-                    { text: "Remember to create a plan that leads to the final answer, using available tools and information from the conversation history. The plan should be in plain text and actionable by an Execution AI." }
-                ]
-            }
+            `Create a detailed plan to address the user query`,
+            "Available tools:\n" + toolDescriptions,
+            "Remember to create a plan that leads to the final answer, using available tools and information from the conversation history. The plan should be in plain text and actionable by an Execution AI."
         ];
     }
 
-    async run(ctx: AIAgentContext): Promise<IAIModelPrompt> {
-        return await super.run(ctx);
+    async run(sess: AIAgentSession): Promise<IAIAgentResponse> {
+        const prompts = await this.userPrompt(sess);
+        const result = await sess.generate(...prompts);
+        
+        sess.addAgentRecord(
+            result.outputPrompt,
+            "Generated plan",
+            [result.id]
+        );
+
+        return result.outputPrompt;
     }
 }

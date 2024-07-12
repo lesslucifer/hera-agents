@@ -41,6 +41,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.24.0",
     "mongodb": "^6.7.0",
+    "nanoid": "^5.0.7",
     "openai": "^4.52.2",
     "pug": "^3.0.2",
     "randomstring": "^1.1.5",

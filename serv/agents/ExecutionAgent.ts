@@ -108,7 +108,7 @@ export class ExecutionAgent extends SimpleAIAgent {
                 ...step.dependencies.flatMap(dep => (stepRecords[dep] ?? []).map(r => r.outputPrompt)),
                 `Please execute the following step: ${step.index}: ${step.description}`
             ]
-            const output = await ctx.execute(executionPrompts, this.systemPrompt, this.tools);
+            const output = await ctx.generate(executionPrompts, this.systemPrompt, this.tools);
             stepRecords[step.index] = [{
                 inputPrompts: executionPrompts,
                 outputPrompt: output.prompt,

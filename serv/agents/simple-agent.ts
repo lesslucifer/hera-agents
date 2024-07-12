@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { IAIModelDynamicPrompt } from "../models/base";
+import { emptyPrompt, IAIModelDynamicPrompt } from "../models/base";
 import { IAITool } from "../tools";
-import { AIAgentContext, IAIAgent, IAIAgentResponse } from "./base";
+import { AIAgentContext, AIAgentSession, IAIAgent, IAIAgentResponse } from "./base";
 
 export class SimpleAIAgent implements IAIAgent {
     protected systemPrompt = ''
@@ -14,20 +14,16 @@ export class SimpleAIAgent implements IAIAgent {
         return []
     }
 
-    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
+    async userPrompt(sess: AIAgentSession): Promise<IAIModelDynamicPrompt[]> {
         return []
     }
 
-    async run(ctx: AIAgentContext, request?: IAIModelDynamicPrompt): Promise<IAIAgentResponse> {
-        const prompts = await this.userPrompt(ctx)
-        if (!prompts) return { role: 'model', parts: [] }
+    async run(sess: AIAgentSession): Promise<IAIAgentResponse> {
+        const prompts = await this.userPrompt(sess)
+        if (!prompts) return emptyPrompt('model')
 
-        if (request) {
-            prompts.push(request)
-        }
-
-        const output = await ctx.execute(prompts, this.systemPrompt)
-        ctx.addAgentRecord(this.name, this.outputTags, prompts, output.prompt, output.usage)
-        return output.prompt
+        const result = await sess.generate(...prompts)
+        sess.addAgentRecord(result.outputPrompt, `output`, [result.id])
+        return result.outputPrompt
     }
 }

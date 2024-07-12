@@ -21,6 +21,10 @@ export class GPTModel implements IAIModel {
         this.model = model;
     }
 
+    get description() {
+        return `GPT_${this.model}`
+    }
+
     private convertToolsToGPTFormat(tools: IAIToolDeclaration[]): ChatCompletionTool[] {
         return tools.map(tool => ({
             type: 'function',
