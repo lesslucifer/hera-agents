@@ -1,10 +1,11 @@
-import { Content } from "@google/generative-ai"
+import { IAIAgentDeclaration, IAIAgentQueryRecord, IAIOperationRecord } from "../serv/agents/base"
 import { IAIModelPrompt, IAIModelUsage } from "../serv/models/base"
-import { IAIAgentRecord } from "../serv/agents/base"
 
 export interface IConversation {
     question: string
-    history: IAIAgentRecord[]
+    activeAgents: IAIAgentDeclaration[]
+    queryRecords: IAIAgentQueryRecord[]
+    operationRecords: IAIOperationRecord[]
     answer: IAIModelPrompt
     usage?: IAIModelUsage
 }

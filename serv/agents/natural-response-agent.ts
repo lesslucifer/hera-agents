@@ -1,10 +1,8 @@
-import _ from "lodash";
-import { IAIModelDynamicPrompt, IAIModelPrompt } from "../models/base";
-import { AIAgentContext, IAIAgent, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
-import { AIAgentHelper } from "./helper";
 
 export class NaturalResponseAgent extends SimpleAIAgent {
+    static readonly INST = new NaturalResponseAgent()
+
     constructor() {
         super(
             NaturalResponseAgent.name,
@@ -12,7 +10,7 @@ export class NaturalResponseAgent extends SimpleAIAgent {
             "Enhances AI responses for natural human-like communication"
         );
 
-        this.systemPrompt = `You are an AI agent specialized in reviewing and enhancing the final outputs of other AI agents. Your primary functions are:
+        this.systemInstruction = `You are an AI agent specialized in reviewing and enhancing the final outputs of other AI agents. Your primary functions are:
 
         1. Analyze the entire conversation history to understand the full context.
         2. Review the last output from the previous agent.
@@ -22,21 +20,11 @@ export class NaturalResponseAgent extends SimpleAIAgent {
         6. Maintain a consistent tone and style throughout the response.
 
         Your goal is to make the AI's responses feel more human-like and engaging while preserving the informational content and accuracy of the original output.`;
+
+        this.triggerPrompt = "Please rewrite the model response in a more natural, conversational way, ensuring it addresses the user's original query and maintains the accuracy of the information. Consider the entire conversation context in your reformulation."
     }
 
     get outputTags(): string[] {
         return ["answer"]
-    }
-
-    async userPrompt(ctx: AIAgentContext): Promise<IAIModelDynamicPrompt[]> {
-        return [
-            ...ctx.conversationPrompts,
-            {
-                role: 'user',
-                parts: [
-                    { text: "\n\nPlease rewrite this response in a more natural, conversational way, ensuring it addresses the user's original query and maintains the accuracy of the information. Consider the entire conversation context in your reformulation." }
-                ]
-            }
-        ];
     }
 }

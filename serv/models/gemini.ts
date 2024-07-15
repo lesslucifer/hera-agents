@@ -7,7 +7,7 @@ export class GeminiModel implements IAIModel {
 
     constructor(apiKey: string, private modelName: string) {
         const genAI = new GoogleGenerativeAI(apiKey);
-        this.model = genAI.getGenerativeModel({ model: modelName });
+        this.model = genAI.getGenerativeModel({ model: modelName, });
     }
 
     get description() {
@@ -82,7 +82,7 @@ export class GeminiModel implements IAIModel {
             usage: response.usageMetadata ? {
                 inputToken: response.usageMetadata.promptTokenCount,
                 outputToken: response.usageMetadata.candidatesTokenCount,
-                totalToken: (response.usageMetadata.promptTokenCount || 0) + (response.usageMetadata.promptTokenCount || 0)
+                totalToken: (response.usageMetadata.promptTokenCount || 0) + (response.usageMetadata.candidatesTokenCount || 0)
             } : undefined
         };
     }

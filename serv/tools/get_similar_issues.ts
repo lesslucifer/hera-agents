@@ -33,7 +33,7 @@ export class GetTicketByDescription implements IAITool {
         "required": ["content", "project"]
     }
 
-    async apply({ content, project }: { content: string, project: string }): Promise<IAIModelPrompt> {
+    async apply({ content, project }: { content: string, project: string }) {
         const { embedding } = await this.embeddingModel.embedContent(content)
 
         const results = await this.qdrant.search(project, {
@@ -42,14 +42,7 @@ export class GetTicketByDescription implements IAITool {
         })
 
         return {
-            role: "function",
-            parts: [
-                {
-                    functionResponse: {
-                        issueKeys: results.map(r => r.payload.key)
-                    }
-                }
-            ]
+            issueKeys: results.map(r => r.payload.key)
         }
     }
 

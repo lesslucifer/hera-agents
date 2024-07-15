@@ -1,10 +1,11 @@
 import _ from "lodash";
 import { emptyPrompt, IAIModelDynamicPrompt } from "../models/base";
 import { IAITool } from "../tools";
-import { AIAgentContext, AIAgentSession, IAIAgent, IAIAgentResponse } from "./base";
+import { AIAgentSession, AIAgentContext, IAIAgent, IAIAgentResponse, IAIAgentInputPrompt } from "./base";
 
 export class SimpleAIAgent implements IAIAgent {
-    protected systemPrompt = ''
+    public systemInstruction = ''
+    protected triggerPrompt: IAIAgentInputPrompt
 
     constructor(public name: string, public description: string, public shortDescription?: string) {
         this.shortDescription ??= this.description
@@ -14,16 +15,15 @@ export class SimpleAIAgent implements IAIAgent {
         return []
     }
 
-    async userPrompt(sess: AIAgentSession): Promise<IAIModelDynamicPrompt[]> {
-        return []
-    }
+    async run(inputs: IAIAgentInputPrompt[], ctx: AIAgentContext): Promise<IAIAgentResponse> {
+        if (!inputs) return emptyPrompt('model')
 
-    async run(sess: AIAgentSession): Promise<IAIAgentResponse> {
-        const prompts = await this.userPrompt(sess)
-        if (!prompts) return emptyPrompt('model')
-
-        const result = await sess.generate(...prompts)
-        sess.addAgentRecord(result.outputPrompt, `output`, [result.id])
+        const prompts = [...inputs]
+        if (this.triggerPrompt) {
+            prompts.push(this.triggerPrompt)
+        }
+        const result = await ctx.query(prompts)
+        ctx.addOpRecord(result.outputPrompt, `output`, [result.id])
         return result.outputPrompt
     }
 }

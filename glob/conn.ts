@@ -12,10 +12,7 @@ export class AppConnections {
     }
 
     async configureConnections(config: ENV_CONFIG) {
-        const mongoConn = new mongodb.MongoClient(config.MONGO_CONNECTION, {
-            useUnifiedTopology: true,
-            ...config.MONGO_OPTIONS
-        });
+        const mongoConn = new mongodb.MongoClient(config.MONGO_CONNECTION, config.MONGO_OPTIONS);
         await mongoConn.connect()
         this.mongo = mongoConn.db(config.MONGO_DB)
     }

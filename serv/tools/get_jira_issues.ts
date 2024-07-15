@@ -67,7 +67,7 @@ export class GetJiraIssuesTool implements IAITool {
         "required": ["keys"]
     }
 
-    async apply({ keys, fields }: { keys: string[], fields: string[] }): Promise<IAIModelPrompt> {
+    async apply({ keys }: { keys: string[] }): Promise<any> {
         const expand = true // extractFields.flatMap(f => f.expand ?? []).join(',')
         let issues = []
         try {
@@ -91,14 +91,7 @@ export class GetJiraIssuesTool implements IAITool {
         }
 
         return {
-            role: "function",
-            parts: [
-                {
-                    functionResponse: {
-                        issues: issues.map(issue => this.extractIssueContent(issue, IssueExtractFields))
-                    }
-                }
-            ]
+            issues: issues.map(issue => this.extractIssueContent(issue, IssueExtractFields))
         }
     }
 
