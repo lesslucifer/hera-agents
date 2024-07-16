@@ -1,10 +1,17 @@
 import { Collection, Db } from "mongodb";
-import { IConversation } from "./conversation";
+import { IChat, IChatMessage } from "./chat";
+import { IAIAgent, IAIAgentQueryRecord, IAIOperationRecord } from "../serv/agents/base";
 
-export let Conversation: Collection<IConversation>
+export let Chat: Collection<IChat>
+export let ChatMessage: Collection<IChatMessage>
+export let AgentQuery: Collection<IAIAgentQueryRecord>
+export let OpRecord: Collection<IAIOperationRecord>
 
 export async function initModels(db: Db) {
-    Conversation = db.collection('conversation')
+    Chat = db.collection('chat')
+    ChatMessage = db.collection('messages')
+    AgentQuery = db.collection('agent_query')
+    OpRecord = db.collection('op_record')
     await migrate(db)
 }
 

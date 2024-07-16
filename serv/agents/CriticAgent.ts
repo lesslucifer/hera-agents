@@ -78,7 +78,7 @@ export class CriticAgent extends SimpleAIAgent {
             // Generate critique
             const critiqueResult = await ctx.query([critiquePrompt]);
             const critique = critiqueResult.outputPrompt.parts[0].text;
-            ctx.addOpRecord(critiqueResult.outputPrompt, `Critic feedback - Iteration ${iteration + 1}`, [critiqueResult.id]);
+            await ctx.addOpRecord(critiqueResult.outputPrompt, `Critic feedback - Iteration ${iteration + 1}`, [critiqueResult.id]);
 
             // Check if the output is satisfactory
             if (critique.startsWith("NO_FURTHER_IMPROVEMENTS_NEEDED")) {
@@ -97,7 +97,7 @@ export class CriticAgent extends SimpleAIAgent {
         }
 
         // Add a final operation record for the successful output
-        ctx.addOpRecord(currentOutput, `Final improved output - Iteration ${iteration + 1}`, [], ["final_output"]);
+        await ctx.addOpRecord(currentOutput, `Final improved output - Iteration ${iteration + 1}`, [], ["final_output"]);
 
         return currentOutput;
     }

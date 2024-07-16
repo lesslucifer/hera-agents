@@ -6,6 +6,7 @@ import { GeminiModel } from "../models/gemini"
 import { IAITool } from "../tools"
 import { AIAgentHelper } from "./helper"
 import * as YAML from 'json-to-pretty-yaml';
+import { AgentQuery, Chat, ChatMessage, OpRecord } from "../../models"
 
 export type IAIAgentResponse = IAIModelPrompt
 
@@ -58,21 +59,15 @@ export interface IAIAgentContextGenerateOptions {
 }
 
 export class AIAgentSession {
-    model: IAIModel
-    activeAgents: IAIAgent[] = []
-    private operationRecords: IAIOperationRecord[] = []
-    private queryHistory: IAIAgentQueryRecord[] = []
-    totalUsage: IAIModelUsage = emptyAIModelUsage()
+    readonly chatId: string
+    readonly id: string
+    readonly model: IAIModel
+    readonly activeAgents: Exact<IAIAgentDeclaration>[] = []
+    readonly totalUsage: IAIModelUsage = emptyAIModelUsage()
 
-    get OperationRecords() {
-        return this.operationRecords as Readonly<IAIOperationRecord[]>
-    }
-
-    get QueryHistory() {
-        return this.queryHistory as Readonly<IAIAgentQueryRecord[]>
-    }
-
-    constructor() {
+    constructor(chatId: string) {
+        this.chatId = chatId
+        this.id = nanoid()
         this.model = new GeminiModel(ENV.GEMINI_KEY, 'gemini-1.5-flash-latest')
     }
 
@@ -85,11 +80,15 @@ export class AIAgentSession {
         }
 
         if (!dupAgent) {
-            this.activeAgents.push(agent)
+            this.activeAgents.push({
+                name: agent.name,
+                description: agent.description,
+                shortDescription: agent.shortDescription
+            })
         }
     }
 
-    addOperationRecord(prompt: IAIModelPrompt,
+    async addOperationRecord(prompt: IAIModelPrompt,
         parentTree?: string[],
         agentName?: string,
         description?: string,
@@ -107,7 +106,8 @@ export class AIAgentSession {
                 queryIds: queryIds ?? [],
                 time: time ?? Date.now()
             }
-            this.operationRecords.push(record)
+
+            await OpRecord.insertOne(record)
             return record
     }
 
@@ -143,18 +143,11 @@ export class AIAgentSession {
                 duration: outputTime - reqTime
             }
         }
-        this.queryHistory.push(queryRecord)
+        
+        await AgentQuery.insertOne(queryRecord)
         AIAgentHelper.accumulateUsage(this.totalUsage, output.usage)
 
         return queryRecord
-    }
-
-    get conversation() {
-        return this.operationRecords.map(r => AIAgentHelper.extendPrompt(r.prompt, [`${r.agent}: ${r.description}`]))
-    }
-
-    get lastPrompt() {
-        return _.last(this.operationRecords)?.prompt
     }
 
     newContext(agent: IAIAgent, parent?: AIAgentContext) {
@@ -163,6 +156,21 @@ export class AIAgentSession {
 
     runAgent(agent: IAIAgent, inputs: IAIAgentInputPrompt[]) {
         return agent.run(inputs, this.newContext(agent))
+    }
+
+    async persistToChatMessage(content: IAIModelPrompt) {
+        const res = await ChatMessage.updateOne({ id: this.id }, {
+            $set: {
+                chatId: this.chatId,
+                id: this.id,
+                content,
+                time: Date.now(),
+                activeAgents: this.activeAgents,
+                usage: this.totalUsage,
+            }
+        }, { upsert: true })
+
+        return await ChatMessage.findOne({ id: this.id })
     }
 }
 
@@ -174,7 +182,7 @@ export class AIAgentContext {
         public agent?: IAIAgent,
         public parent?: AIAgentContext) {
             this.id = nanoid()
-            this.tree = [...(this.parent?.tree ?? []), this.id]
+            this.tree = [...(this.parent?.tree ?? [sess.id]), this.id]
             sess.addActiveAgent(agent)
     }
 

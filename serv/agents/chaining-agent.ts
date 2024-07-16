@@ -37,7 +37,7 @@ export class ChainingAIAgent extends SimpleAIAgent {
     }
 
     private async handleError(ctx: AIAgentContext, err: any, outputs: IAIModelPrompt[], lastAgent: IAIAgent): Promise<IAIAgentResponse> {
-        ctx.addOpRecord(emptyPrompt('model'),
+        await ctx.addOpRecord(emptyPrompt('model'),
             `An error occured during the process agent named ${lastAgent?.name}. Please handle this situation and provide guidance. Error details: ${YAML.stringify(err)}`)
 
         return await ctx.runAgent(this.fallbackAgent, [{

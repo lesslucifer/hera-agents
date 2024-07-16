@@ -23,7 +23,7 @@ export class SimpleAIAgent implements IAIAgent {
             prompts.push(this.triggerPrompt)
         }
         const result = await ctx.query(prompts)
-        ctx.addOpRecord(result.outputPrompt, `output`, [result.id])
+        await ctx.addOpRecord(result.outputPrompt, `output`, [result.id])
         return result.outputPrompt
     }
 }

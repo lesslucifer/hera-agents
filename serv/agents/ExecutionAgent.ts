@@ -110,7 +110,7 @@ export class ExecutionAgent extends SimpleAIAgent {
             lastOutput = result.outputPrompt
 
             // Add operation record for the model's response
-            ctx.addOpRecord(result.outputPrompt, `Model response - Iteration ${iteration + 1}`, [result.id]);
+            await ctx.addOpRecord(result.outputPrompt, `Model response - Iteration ${iteration + 1}`, [result.id]);
 
             // Process function calls and update step status
             let isCompleted = false
@@ -125,7 +125,7 @@ export class ExecutionAgent extends SimpleAIAgent {
                             functionResponse: toolResult
                         })
                         // Add operation record for the function call
-                        ctx.addOpRecord(
+                        await ctx.addOpRecord(
                             mkPrompt(YAML.stringify(toolResult)),
                             `Function call: ${part.functionName} - Iteration ${iteration + 1}`
                         );
@@ -160,7 +160,7 @@ export class ExecutionAgent extends SimpleAIAgent {
         }
 
         // Add final operation record
-        ctx.addOpRecord(lastOutput, `Execution complete`, [], ["execution_complete"]);
+        await ctx.addOpRecord(lastOutput, `Execution complete`, [], ["execution_complete"]);
 
         return lastOutput;
     }

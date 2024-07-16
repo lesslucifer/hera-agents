@@ -4,25 +4,30 @@ import moment from 'moment';
 import styles from './ChatMessage.module.css';
 
 interface ChatMessageProps {
-    message: {
-        content: string;
-        timestamp: Date;
-    };
-    isUser: boolean;
+  message: {
+    role: string;
+    parts: Array<{ text?: string }>;
+  };
+  isUser: boolean;
+  timestamp: Date;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser }) => {
-    return (
-        <div className={`${styles.chatMessage} ${isUser ? styles.user : styles.agent}`}>
-            <div 
-                className={styles.messageContent}
-                dangerouslySetInnerHTML={{ __html: marked(message.content) as string }}
-            />
-            <div className={styles.messageTimestamp}>
-                {moment(message.timestamp).format('HH:mm')}
-            </div>
-        </div>
-    );
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser, timestamp }) => {
+  return (
+    <div className={`${styles.chatMessage} ${isUser ? styles.user : styles.agent}`}>
+      <div className={styles.messageContent}>
+        {message.parts.map((part, index) => (
+          <div
+            key={index}
+            dangerouslySetInnerHTML={{ __html: marked(part.text || '') as string }}
+          />
+        ))}
+      </div>
+      <div className={styles.messageTimestamp}>
+        {moment(timestamp).format('HH:mm')}
+      </div>
+    </div>
+  );
 };
 
 export default ChatMessage;

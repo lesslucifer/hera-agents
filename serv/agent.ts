@@ -1,4 +1,4 @@
-import { Conversation } from "../models";
+import { Chat } from "../models";
 import { AIAgentSession, IAIAgent } from './agents/base';
 import { FactualKnowledgeAgent } from './agents/FactualKnowledgeAgent';
 import { JiraAgent } from './agents/JiraAgent';
@@ -16,26 +16,10 @@ class AIAgentService {
         ])
     }
 
-    async ask(question: string) {
-        const sess = new AIAgentSession()
+    async ask(chatId: string, question: string) {
+        const sess = new AIAgentSession(chatId)
         const res = await sess.runAgent(this.mainAgent, [`This is the user query: ${question}`])
-
-        const ins = await Conversation.insertOne({
-            question: question,
-            activeAgents: sess.activeAgents.map(agent => ({
-                name: agent.name,
-                description: agent.description,
-                shortDescription: agent.shortDescription
-            })),
-            queryRecords: [...sess.QueryHistory],
-            operationRecords: [...sess.OperationRecords],
-            answer: res,
-            usage: sess.totalUsage,
-        })
-        return {
-            id: ins.insertedId,
-            ...res
-        }
+        return await sess.persistToChatMessage(res)
     }
 }
 

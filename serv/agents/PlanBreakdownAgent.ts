@@ -2,6 +2,7 @@ import _ from "lodash";
 import { IAIModelDynamicPrompt, IAIModelPrompt, mkPrompt } from "../models/base";
 import { AIAgentContext, IAIAgent, IAIAgentInputPrompt, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
+import { platform } from "os";
 
 export class PlanBreakdownAgent extends SimpleAIAgent {
     static readonly INST = new PlanBreakdownAgent()
@@ -35,35 +36,15 @@ export class PlanBreakdownAgent extends SimpleAIAgent {
         return ["plan_breakdown"]
     }
 
-    private async getPlanFromContext(ctx: AIAgentContext): Promise<IAIModelPrompt | null> {
-        // Find the last plan from the PlannerAgent in the context
-        const lastPlanRecord = _.findLast(ctx.sess.OperationRecords, r => r.tags?.includes("plan"));
-        if (!lastPlanRecord) {
-            return null;
-        }
-        return lastPlanRecord.prompt;
-    }
-
     async run(inputs: IAIAgentInputPrompt[], ctx: AIAgentContext): Promise<IAIAgentResponse> {
-        let plan = await this.getPlanFromContext(ctx);
-        
-        if (!plan) {
-            // If no plan is found in the context, use the input
-            if (inputs.length === 0) {
-                throw new Error("No plan found in context and no input provided. Please run the PlannerAgent first or provide a plan as input.");
-            }
-            plan = mkPrompt(inputs[0]);
-        }
-
         const breakdownPrompt: IAIModelPrompt = {
             role: 'user',
             parts: [
-                { text: "Here's the plan to break down and optimize:\n\n" + plan.parts[0].text },
-                { text: "\n\nPlease analyze this plan, break it down into detailed steps, identify dependencies, and apply topological sorting. Output the result in the required format: [STEP_INDEX][DEPENDENCIES]: <step description>" }
+                { text: "\n\nPlease analyze the given plan, break it down into detailed steps, identify dependencies, and apply topological sorting. Output the result in the required format: [STEP_INDEX][DEPENDENCIES]: <step description>" }
             ]
         };
 
-        const result = await ctx.query([breakdownPrompt]);
+        const result = await ctx.query([...inputs, breakdownPrompt]);
         
         // Validate the output format
         const steps = result.outputPrompt.parts[0].text.split('\n');
@@ -75,7 +56,7 @@ export class PlanBreakdownAgent extends SimpleAIAgent {
         }
 
         const finalOutput = validSteps.join('\n');
-        ctx.addOpRecord(mkPrompt(finalOutput), "Plan breakdown and optimization", [result.id], this.outputTags);
+        await ctx.addOpRecord(mkPrompt(finalOutput), "Plan breakdown and optimization", [result.id], this.outputTags);
 
         return mkPrompt(finalOutput);
     }
