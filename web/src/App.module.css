@@ -1,0 +1,16 @@
+body {
+  font-family: 'Mulish', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f2f5;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-family: 'Abril Fatface', cursive;
+  color: #2c3e50;
+}

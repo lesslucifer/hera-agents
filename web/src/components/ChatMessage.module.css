@@ -1,0 +1,45 @@
+.chatMessage {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 8px;
+    max-width: 70%;
+    min-width: 40%;
+}
+
+.messageContent {
+    padding: 10px;
+    border-radius: 18px;
+    display: inline-block;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+.user {
+    align-self: flex-end;
+}
+
+.user .messageContent {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+}
+
+.agent .messageContent {
+    background-color: #e9ecef;
+    color: #333;
+    align-self: flex-start;
+}
+
+.messageTimestamp {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.user .messageTimestamp {
+    align-self: flex-end;
+}
+
+.agent .messageTimestamp {
+    align-self: flex-start;
+}
