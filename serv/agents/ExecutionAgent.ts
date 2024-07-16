@@ -1,6 +1,6 @@
 import * as YAML from 'json-to-pretty-yaml';
 import _ from "lodash";
-import { IAIModelDynamicPrompt, IAIModelPrompt, IAIModelPromptPart, mkPrompt } from "../models/base";
+import { IAIModelDynamicPrompt, IAIModelGenerationRequestCustomConfig, IAIModelPrompt, IAIModelPromptPart, mkPrompt } from "../models/base";
 import { AIAgentContext, IAIAgent, IAIAgentInputPrompt, IAIAgentResponse } from "./base";
 import { SimpleAIAgent } from "./simple-agent";
 import { IAITool } from "../tools";
@@ -31,23 +31,21 @@ export class ExecutionAgent extends SimpleAIAgent {
 
         this.systemInstruction = `You are an Execution AI Agent responsible for executing plans created by a Planner Agent. Your role is to:
         1. Analyze the given plan and execution history.
-        2. Determine all steps that have done and can be executed based on the execution history.
-        3. Execute multiple steps in parallel when possible.
-        4. Use function calls when necessary to complete steps.
-        5. Provide clear feedback on execution progress or issues encountered.
-        6. If there's any confusion or missing information, stop and provide feedback instead of continuing.
-        7. If a function call returns an error, analyze it and provide a report with relevant feedback for improvement.
-        8. Try to make use of the information retrieved in the history, don't repeat yourself.
-        9. The final output MUST start with the "_COMPLETED_" indicator so we can stop the execution
-
-        Your output should include:
-        1. Clear, concise updates on the execution progress.
-        2. Any necessary function calls for completing steps.
-        3. Analysis of function call results when provided.`;
+        2. Determine the steps that already accomplished and what you should do next to complete the plan.
+        3. Use function / tool calls when necessary to complete steps.
+        4. If there's any confusion or missing information, stop and provide feedback instead of continuing.
+        5. Try to make use of the information retrieved in the history, DO NOT trigger the same functions / tools that have been done.
+        6. The final output MUST start with the "_COMPLETED_" indicator so we can stop the execution`;
     }
 
     get outputTags(): string[] {
         return ["execution"];
+    }
+
+    get customQueryConfig(): IAIModelGenerationRequestCustomConfig {
+        return {
+            maxOutputTokens: 1000
+        }
     }
 
     // private parseSteps(plan: string): Step[] {
@@ -98,7 +96,13 @@ export class ExecutionAgent extends SimpleAIAgent {
                 throw new Error(`Execution timed out. We have done ${iteration + 1} iteration`);
             }
 
-            if (!_.last(_.last(executionPrompts)?.parts)?.functionResponse) {
+            if (iteration === 0) {
+                executionPrompts.push(mkPrompt(`Please execute the plan`))
+            }
+            else if (_.last(_.last(executionPrompts)?.parts)?.functionResponse){
+                executionPrompts.push(mkPrompt(`Function ${_.last(_.last(executionPrompts)?.parts)?.functionName} has run successfully. Please continue to execute the plan`))
+            }
+            else {
                 executionPrompts.push(mkPrompt(`Please continue to execute the plan`))
             }
 
