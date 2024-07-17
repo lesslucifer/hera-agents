@@ -7,6 +7,7 @@ import { IAITool } from "../tools"
 import { AIAgentHelper } from "./helper"
 import * as YAML from 'json-to-pretty-yaml';
 import { AgentQuery, Chat, ChatMessage, OpRecord } from "../../models"
+import { IChatMessage } from "../../models/chat"
 
 export type IAIAgentResponse = IAIModelPrompt
 
@@ -45,7 +46,7 @@ export interface IAIOperationRecord {
 
     embeeding?: number[]
     queryIds: string[]
-    
+
     time: number
 }
 
@@ -64,6 +65,7 @@ export class AIAgentSession {
     readonly model: IAIModel
     readonly activeAgents: Exact<IAIAgentDeclaration>[] = []
     readonly totalUsage: IAIModelUsage = emptyAIModelUsage()
+    private conversationMessages: IChatMessage[]
 
     constructor(chatId: string) {
         this.chatId = chatId
@@ -95,20 +97,34 @@ export class AIAgentSession {
         queryIds?: string[],
         tags?: string[],
         time?: number) {
-            const id = nanoid()
-            const record: IAIOperationRecord = {
-                id,
-                tree: [...(parentTree ?? []), id],
-                tags: tags ?? [],
-                description,
-                agent: agentName,
-                prompt: prompt,
-                queryIds: queryIds ?? [],
-                time: time ?? Date.now()
-            }
+        const id = nanoid()
+        const record: IAIOperationRecord = {
+            id,
+            tree: [...(parentTree ?? []), id],
+            tags: tags ?? [],
+            description,
+            agent: agentName,
+            prompt: prompt,
+            queryIds: queryIds ?? [],
+            time: time ?? Date.now()
+        }
 
-            await OpRecord.insertOne(record)
-            return record
+        await OpRecord.insertOne(record)
+        return record
+    }
+
+    async conversationMessagePrompts(): Promise<IAIModelPrompt[]> {
+        if (!this.conversationMessages) {
+            this.conversationMessages = await ChatMessage.find({ chatId: this.chatId }).toArray()
+        }
+
+        if (!this.conversationMessages?.length) return []
+
+        return [
+            mkPrompt(`Next is THE PREVIOUS CONVERSATION between user and the system`),
+            ...this.conversationMessages.map(msg => msg.content),
+            mkPrompt(`END OF THE PREVIOUS CONVERSATION. Next will be information of the current process`),
+        ]
     }
 
     async generate(
@@ -117,9 +133,11 @@ export class AIAgentSession {
     ) {
         const reqTime = Date.now()
 
-        console.log(`[Query]`, opts?.trigger, inputPrompts.map(p => YAML.stringify(p)).join('\n---------\n'))
+        const conversationPrompts = [...await this.conversationMessagePrompts(), ...inputPrompts]
+
+        console.log(`[Query]`, opts?.trigger, conversationPrompts.map(p => YAML.stringify(p)).join('\n---------\n'))
         const output = await this.model.generate({
-            prompts: inputPrompts,
+            prompts: conversationPrompts,
             sysInstruction: opts?.sysInstruction,
             tools: opts?.tools,
             customConfig: opts?.customConfig
@@ -132,7 +150,7 @@ export class AIAgentSession {
             tree: [...(opts.parentTree ?? []), genId],
             trigger: opts?.trigger ?? '',
 
-            inputPrompts: [...inputPrompts],
+            inputPrompts: [...conversationPrompts],
             outputPrompt: { role: output.prompt.role, parts: AIAgentHelper.uniqJsonDeep(output.prompt.parts) },
             usage: output.usage,
 
@@ -143,7 +161,7 @@ export class AIAgentSession {
                 duration: outputTime - reqTime
             }
         }
-        
+
         await AgentQuery.insertOne(queryRecord)
         AIAgentHelper.accumulateUsage(this.totalUsage, output.usage)
 
@@ -181,9 +199,9 @@ export class AIAgentContext {
     constructor(public sess: AIAgentSession,
         public agent?: IAIAgent,
         public parent?: AIAgentContext) {
-            this.id = nanoid()
-            this.tree = [...(this.parent?.tree ?? [sess.id]), this.id]
-            sess.addActiveAgent(agent)
+        this.id = nanoid()
+        this.tree = [...(this.parent?.tree ?? [sess.id]), this.id]
+        sess.addActiveAgent(agent)
     }
 
     async query(inputPrompts: IAIAgentInputPrompt[]) {
@@ -200,8 +218,8 @@ export class AIAgentContext {
         this.addOpRecord(emptyPrompt(), `request to ${agent.name}: ${runDesc ?? 'continue to proceed'}`, [], ["run_agent"])
         return await agent.run(input ?? [], new AIAgentContext(this.sess, agent, this))
     }
-    
-    addOpRecord(prompt: IAIModelDynamicPrompt, description?: string, queryIds?: string[], tags?: string[]) {        
+
+    addOpRecord(prompt: IAIModelDynamicPrompt, description?: string, queryIds?: string[], tags?: string[]) {
         return this.sess.addOperationRecord(mkPrompt(prompt), this.tree, this.agent.name, description, queryIds, tags ?? this.agent.outputTags)
     }
 }
