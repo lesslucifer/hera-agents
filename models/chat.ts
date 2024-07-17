@@ -7,11 +7,11 @@ export interface IChat {
 }
 
 export interface IChatMessage {
-    chatId: string
-    id: string
-    content: IAIModelPrompt
-    time: number
-
-    activeAgents?: IAIAgentDeclaration[]
-    usage?: IAIModelUsage
+    chatId: string;
+    id: string;
+    content: IAIModelPrompt;
+    time: number;
+    activeAgents?: IAIAgentDeclaration[];
+    usage?: IAIModelUsage;
+    reactions?: Record<string, number>;
 }

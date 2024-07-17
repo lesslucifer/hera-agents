@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { List, Input, Button, Typography, Space, Card } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import styles from './ChatList.module.css';
+import { notification } from 'antd';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -22,18 +23,33 @@ const ChatList: React.FC = () => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [lastId, setLastId] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const fetchChats = async (initial = false) => {
         if (loading) return;
         setLoading(true);
         try {
-            const response = await axios.get(`${HOST}/chats?limit=20&offset=${initial ? 0 : chats.length}`);
-            const newChats = response.data;
+            const response = await axios.get(`${HOST}/chats`, {
+                params: {
+                    limit: 20,
+                    before: initial ? undefined : lastId
+                }
+            });
+            const { chats: newChats, hasMore } = response.data?.data ?? {};
+            console.log(response.data)
             setChats(prevChats => initial ? newChats : [...prevChats, ...newChats]);
-            setHasMore(newChats.length === 20);
+            setHasMore(hasMore);
+            if (newChats.length > 0) {
+                setLastId(newChats[newChats.length - 1].id);
+            }
         } catch (error) {
             console.error('Error fetching chats:', error);
+            setHasMore(false)
+            notification.error({
+                message: 'Error',
+                description: 'Failed to fetch chats. Please try again.',
+            });
         } finally {
             setLoading(false);
         }
@@ -49,6 +65,10 @@ const ChatList: React.FC = () => {
             navigate(`/chats/${newChat.id}`);
         } catch (error) {
             console.error('Error creating new chat:', error);
+            notification.error({
+                message: 'Error',
+                description: 'Failed to create a new chat. Please try again.',
+            });
         } finally {
             setLoading(false);
         }
@@ -68,6 +88,11 @@ const ChatList: React.FC = () => {
                     size="large"
                     onSearch={createNewChat}
                     loading={loading}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            createNewChat((e.target as HTMLInputElement).value);
+                        }
+                    }}
                 />
                 <List
                     dataSource={chats}
